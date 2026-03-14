@@ -5,6 +5,7 @@ import { Footer } from '../../components/SubscribeFooter';
 import { useProducts } from '../../hooks/useProducts';
 import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '../../integrations/supabase/client';
 
 export default function AdminProductsPage() {
   const navigate = useNavigate();
@@ -13,8 +14,14 @@ export default function AdminProductsPage() {
   const handleDelete = async (productId) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     
-    // TODO: Implement delete API call
-    toast.success('Product deleted');
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', productId);
+      if (error) throw error;
+      toast.success('Product deleted');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete product');
+    }
   };
 
   const handleEdit = (product) => {
@@ -47,7 +54,10 @@ export default function AdminProductsPage() {
               Back to Dashboard
             </Link>
             <h1>Manage Products</h1>
-            <button className="primary-button">
+            <button 
+              className="primary-button"
+              onClick={() => navigate('/admin/products/new')}
+            >
               <Plus size={18} />
               Add Product
             </button>

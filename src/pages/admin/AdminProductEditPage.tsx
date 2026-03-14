@@ -6,6 +6,7 @@ import { useProduct } from '../../hooks/useProducts';
 import { ArrowLeft, Plus, X, Save, Trash2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice } from '../../lib/utils';
+import { supabase } from '../../integrations/supabase/client';
 
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 const CATEGORIES = ['man', 'woman'];
@@ -131,16 +132,16 @@ export default function AdminProductEditPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement actual save API call
-      // const { error } = await supabase.from('products').update(formData).eq('id', id);
-      // if (error) throw error;
+      const { error } = id 
+        ? await supabase.from('products').update(formData).eq('id', id)
+        : await supabase.from('products').insert(formData).select().single();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
-      toast.success('Product saved successfully');
+      toast.success(id ? 'Product saved successfully' : 'Product created successfully');
       navigate('/admin/products');
     } catch (error) {
+      console.error('Save error:', error);
       toast.error('Failed to save product');
     } finally {
       setIsSaving(false);
@@ -151,10 +152,13 @@ export default function AdminProductEditPage() {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
     
     try {
-      // TODO: Implement actual delete API call
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+      
       toast.success('Product deleted successfully');
       navigate('/admin/products');
     } catch (error) {
+      console.error('Delete error:', error);
       toast.error('Failed to delete product');
     }
   };
@@ -188,6 +192,13 @@ export default function AdminProductEditPage() {
               <ArrowLeft size={18} />
               Back to Products
             </Link>
+            <button 
+              className="primary-button"
+              onClick={() => navigate('/admin/products/new')}
+            >
+              <Plus size={18} />
+              Add Product
+            </button>
             <h1>Edit Product</h1>
             <div style={{ display: 'flex', gap: 12 }}>
               <button 

@@ -321,7 +321,7 @@ export default function Header() {
                   <img src="/images/user-20-2-.avif" alt="" className="account-login-icon" />
                 </div>
               )}
-              <div className="mobile-menu-open-btn" onClick={() => setMobileOpen(true)}>
+              <div className="mobile-menu-open-btn" onClick={() => { console.log('Mobile menu clicked'); setMobileOpen(true); }}>
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <line x1="3" y1="12" x2="21" y2="12"></line>
                   <line x1="3" y1="6" x2="21" y2="6"></line>
