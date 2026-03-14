@@ -2517,6 +2517,12 @@ html {
   font-weight: 900;
 }
 
+/* ===== HERO SECTION FIXES ===== */
+.hero-section {
+  padding-top: 12px !important;
+  margin-top: -12px !important;
+}
+
 /* ===== THEME BUTTON FIXES ===== */
 /* Fix border radius on hover background to match button */
 .theme-btn-bg {

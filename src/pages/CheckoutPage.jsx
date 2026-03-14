@@ -81,6 +81,31 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Helper function to save shipping address to profile
+    const saveShippingAddressToProfile = async () => {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            name: formData.name,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            pincode: formData.pincode,
+          })
+          .eq('id', user.id);
+        
+        if (error) {
+          console.error('Failed to save address to profile:', error);
+        } else {
+          console.log('Shipping address saved to profile');
+        }
+      } catch (err) {
+        console.error('Error saving address:', err);
+      }
+    };
+
     // Handle Razorpay payment (includes UPI and Card payments)
     if (paymentMethod === 'razorpay' || paymentMethod === 'upi') {
       try {
@@ -144,6 +169,9 @@ export default function CheckoutPage() {
             } else {
               console.log('Order status updated to paid');
               toast.success('Payment successful!');
+              
+              // Save shipping address to profile for future orders
+              await saveShippingAddressToProfile();
               
               // Fetch fresh data to confirm update
               const { data: updatedOrder } = await supabase
@@ -219,6 +247,9 @@ export default function CheckoutPage() {
         },
         items: orderItems,
       });
+
+      // Save shipping address to profile for future orders
+      await saveShippingAddressToProfile();
 
       clearCart();
       toast.success('Order placed successfully!');
