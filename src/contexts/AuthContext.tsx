@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
+      if (session?.user && session.access_token) {
         try {
           await fetchProfile(session.user.id, session.access_token);
         } catch (err) {
@@ -76,10 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function createProfile(userId: string, userData: { email: string; name?: string }) {
+  async function createProfile(userId: string, userData: { email: string; name?: string }, accessToken?: string) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token || SUPABASE_ANON_KEY;
+      const authToken = accessToken || SUPABASE_ANON_KEY;
       
       const url = `${SUPABASE_URL}/rest/v1/profiles`;
       const response = await fetch(url, {
@@ -130,12 +129,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         // No profile data found, create profile
         if (user?.email) {
-          await createProfile(userId, { email: user.email, name: user.user_metadata?.name });
+          await createProfile(userId, { email: user.email, name: user.user_metadata?.name }, accessToken);
           const retryResponse = await fetch(url, {
             method: 'GET',
             headers: {
               'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${authToken}`
+              'Authorization': `Bearer ${accessToken}`
             }
           });
           const retryData = await retryResponse.json();
@@ -230,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return { error: new Error('Not authenticated') };
     
     try {
-      // Get current session for proper auth token
+      // Get access token from the current session
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token || SUPABASE_ANON_KEY;
       
