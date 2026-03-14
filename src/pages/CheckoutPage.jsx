@@ -78,8 +78,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Handle Razorpay payment
-    if (paymentMethod === 'razorpay') {
+    // Handle Razorpay payment (includes UPI and Card payments)
+    if (paymentMethod === 'razorpay' || paymentMethod === 'upi') {
       try {
         // First create the order in pending state
         const orderItems = cartItems.map(item => ({

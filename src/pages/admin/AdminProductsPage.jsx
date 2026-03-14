@@ -32,8 +32,8 @@ export default function AdminProductsPage() {
     return (
       <div className="page-wrapper">
         <Header />
-        <div className="section _100px">
-          <div className="container">
+        <div className="section" style={{ padding: '60px 0' }}>
+          <div className="container" style={{ maxWidth: 1200 }}>
             <div className="loading">Loading products...</div>
           </div>
         </div>
@@ -46,14 +46,14 @@ export default function AdminProductsPage() {
     <div className="page-wrapper">
       <Header />
       
-      <div className="section _100px">
-        <div className="container">
-          <div className="admin-header">
+      <div className="section" style={{ padding: '60px 0' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div className="admin-header" style={{ marginBottom: 40 }}>
             <Link to="/admin" className="back-link">
               <ArrowLeft size={18} />
               Back to Dashboard
             </Link>
-            <h1>Manage Products</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700 }}>Manage Products</h1>
             <button 
               className="primary-button"
               onClick={() => navigate('/admin/products/new')}
@@ -63,57 +63,56 @@ export default function AdminProductsPage() {
             </button>
           </div>
 
-          <div className="admin-table-container">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products?.map(product => (
-                  <tr key={product.id}>
-                    <td className="product-cell">
-                      <img 
-                        src={product.images?.[0] || '/images/placeholder.png'} 
-                        alt={product.name}
-                        className="product-thumbnail"
-                      />
-                      <span>{product.name}</span>
-                    </td>
-                    <td>{product.category}</td>
-                    <td>₹{product.price?.toLocaleString()}</td>
-                    <td>{product.stock}</td>
-                    <td>
-                      <span className={`status-badge ${product.is_active ? 'active' : 'inactive'}`}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="actions-cell">
-                      <button 
-                        className="icon-btn edit"
-                        onClick={() => handleEdit(product)}
-                        title="Edit Product"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        className="icon-btn delete"
-                        onClick={() => handleDelete(product.id)}
-                        title="Delete Product"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="admin-grid-container" style={{ marginTop: 24 }}>
+            {/* Grid Header */}
+            <div className="admin-grid-header">
+              <div className="grid-col-product">Product</div>
+              <div className="grid-col-category">Category</div>
+              <div className="grid-col-price">Price</div>
+              <div className="grid-col-stock">Stock</div>
+              <div className="grid-col-status">Status</div>
+              <div className="grid-col-actions">Actions</div>
+            </div>
+            
+            {/* Grid Body */}
+            {products?.map(product => (
+              <div className="admin-grid-row" key={product.id}>
+                <div className="grid-col-product">
+                  <div className="product-cell">
+                    <img 
+                      src={product.images?.[0] || '/images/placeholder.png'} 
+                      alt={product.name}
+                      className="product-thumbnail"
+                    />
+                    <span>{product.name}</span>
+                  </div>
+                </div>
+                <div className="grid-col-category">{product.category}</div>
+                <div className="grid-col-price">₹{(product.discount_price || product.price)?.toLocaleString()}</div>
+                <div className="grid-col-stock">{product.stock}</div>
+                <div className="grid-col-status">
+                  <span className={`status-badge ${product.is_active ? 'active' : 'inactive'}`}>
+                    {product.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className="grid-col-actions actions-cell">
+                  <button 
+                    className="icon-btn edit"
+                    onClick={() => handleEdit(product)}
+                    title="Edit Product"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button 
+                    className="icon-btn delete"
+                    onClick={() => handleDelete(product.id)}
+                    title="Delete Product"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

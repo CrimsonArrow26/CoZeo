@@ -6,14 +6,17 @@ import type { Order, OrderItem, OrderStatus } from '../types';
 const SUPABASE_URL = 'https://rbjivulozgubrenzwcjx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiaml2dWxvemd1YnJlbnp3Y2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNjM2MzYsImV4cCI6MjA4ODkzOTYzNn0.5-CPtlAuIUxzBgLLVl0AOKepGOfVmunGwMy3e9lWsRw';
 
-// Helper for direct Supabase fetch
+// Helper for direct Supabase fetch with authenticated user token
 async function supabaseFetch(table: string, options?: { 
   select?: string; 
   filters?: Record<string, string>; 
-  order?: { column: string; ascending: boolean };
+  order?: { column: string; ascending?: boolean };
   limit?: number;
   single?: boolean;
 }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || SUPABASE_ANON_KEY;
+  
   let url = `${SUPABASE_URL}/rest/v1/${table}`;
   const params = new URLSearchParams();
   
@@ -24,7 +27,8 @@ async function supabaseFetch(table: string, options?: {
     params.append('limit', options.limit.toString());
   }
   if (options?.order) {
-    params.append('order', `${options.order.column}.${options.order.ascending ? 'asc' : 'desc'}`);
+    const direction = options.order.ascending === false ? 'desc' : 'asc';
+    params.append('order', `${options.order.column}.${direction}`);
   }
   if (options?.single) {
     params.append('limit', '1');
@@ -44,7 +48,7 @@ async function supabaseFetch(table: string, options?: {
     method: 'GET',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
   });

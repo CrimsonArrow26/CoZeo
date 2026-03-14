@@ -86,7 +86,7 @@ export function useProducts(filters?: { category?: string; badge?: string; minPr
         }
         
         const data = await supabaseFetch('products', {
-          select: '*',
+          select: '*,id',
           filters: Object.keys(filtersObj).length > 0 ? filtersObj : undefined,
           order: { column: 'created_at', ascending: false }
         });
@@ -112,7 +112,7 @@ export function useProduct(slug: string) {
     queryFn: async () => {
       try {
         const data = await supabaseFetch('products', {
-          select: '*',
+          select: '*,id',
           filters: { slug },
           single: true
         });

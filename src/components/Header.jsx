@@ -332,27 +332,58 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        <div className={`mobile-menu-outer ${mobileOpen ? 'open' : ''}`}>
-          <div className={`bg mobile-menu-bg${mobileOpen ? ' visible' : ''}`} onClick={() => setMobileOpen(false)}></div>
-          <div className={`mobile-menu${mobileOpen ? ' open' : ''}`}>
-            <div className="mobile-logo-box">
-              <Link to="/" className="header-logo-link w-inline-block" onClick={() => setMobileOpen(false)}>
-                <p className="header-logo-text">CoZeo</p>
+        {/* Mobile Menu - Redesigned */}
+        <div className={`mobile-menu-container ${mobileOpen ? 'active' : ''}`}>
+          <div className="mobile-menu-backdrop" onClick={() => setMobileOpen(false)}></div>
+          <div className="mobile-menu-panel">
+            <div className="mobile-menu-header">
+              <Link to="/" className="mobile-menu-logo" onClick={() => setMobileOpen(false)}>
+                CoZeo
               </Link>
-              <img src="/images/close-20-2-.png" alt="" className="mobile-menu-close-btn" onClick={() => setMobileOpen(false)} />
+              <button className="mobile-menu-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
-            <div className="mobile-menu-box">
-              {scrollItems.map((item) => (
-                <a key={item.id} className="mobile-dropdown-link w-inline-block" onClick={(e) => scrollTo(e, item.id)} href="#">
-                  <div className="mobile-dropdown-title">{item.label}</div>
-                </a>
-              ))}
-              {routeItems.map((item) => (
-                <Link key={item.to} to={item.to} className="mobile-dropdown-link w-inline-block" onClick={() => setMobileOpen(false)}>
-                  <div className="mobile-dropdown-title">{item.label}</div>
+            
+            <div className="mobile-menu-content">
+              <nav className="mobile-menu-nav">
+                <Link to="/" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <span>Home</span>
                 </Link>
-              ))}
+                <Link to="/shop" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <span>Shop</span>
+                </Link>
+                <a href="#About-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'About-Section')}>
+                  <span>About Us</span>
+                </a>
+                <a href="#Featured-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Featured-Section')}>
+                  <span>Collection</span>
+                </a>
+                <a href="#Category-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Category-Section')}>
+                  <span>Categories</span>
+                </a>
+              </nav>
+            </div>
+
+            <div className="mobile-menu-footer">
+              {user ? (
+                <div className="mobile-user-info">
+                  <div className="mobile-user-avatar">
+                    {profile?.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                  </div>
+                  <div className="mobile-user-details">
+                    <p className="mobile-user-name">{profile?.name || 'User'}</p>
+                    <p className="mobile-user-email">{user.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <button className="mobile-menu-btn" onClick={() => { setMobileOpen(false); setLoginOpen(true); }}>
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
         </div>

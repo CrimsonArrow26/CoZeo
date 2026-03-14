@@ -1,104 +1,118 @@
-// Supabase Edge Function for Razorpay order creation - PRODUCTION
+// Supabase Edge Function for Razorpay order creation
 // Deploy with: supabase functions deploy create-razorpay-order
-// Set secrets: supabase secrets set RAZORPAY_KEY_ID=your_key RAZORPAY_KEY_SECRET=your_secret
+// Set secrets: 
+//   supabase secrets set RAZORPAY_KEY_ID=your_key
+//   supabase secrets set RAZORPAY_KEY_SECRET=your_secret
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-
-const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID');
-const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
-
-interface RazorpayRequest {
-  amount: number;
-  orderId: string;
-  userEmail: string;
-  userName: string;
-}
-
-serve(async (req: Request) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
-
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      }
+    });
   }
 
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   }
 
   try {
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-      return new Response(
-        JSON.stringify({ error: 'Razorpay credentials not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID")!;
+    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET")!;
+
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      console.error("Missing Razorpay credentials");
+      return new Response(JSON.stringify({ error: "Razorpay credentials not configured" }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
-    const body: RazorpayRequest = await req.json();
-    const { amount, orderId, userEmail, userName } = body;
+    // Get request body
+    const { amount, orderId, userEmail, userName } = await req.json();
 
     if (!amount || !orderId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: amount, orderId' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Missing required fields: amount, orderId" }), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
-    const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
-    
-    const response = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST',
+    console.log("Creating Razorpay order:", { amount, orderId, userEmail, userName });
+
+    // Create Razorpay order
+    const razorpayRes = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
       headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Authorization: "Basic " + btoa(`${razorpayKeyId}:${razorpayKeySecret}`),
       },
       body: JSON.stringify({
-        amount: Math.round(amount * 100),
-        currency: 'INR',
+        amount: Math.round(amount * 100), // Convert to paise
+        currency: "INR",
         receipt: orderId.slice(0, 40),
         notes: {
           order_id: orderId,
-          user_email: userEmail || '',
-          user_name: userName || '',
+          user_email: userEmail || "",
+          user_name: userName || "",
         },
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Razorpay API error:', response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create Razorpay order', details: errorText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const order = await razorpayRes.json();
+
+    if (!razorpayRes.ok) {
+      console.error("Razorpay API error:", order);
+      return new Response(JSON.stringify({ error: "Failed to create Razorpay order", details: order }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
-    const data = await response.json();
-    
+    console.log("Razorpay order created:", order.id);
+
     return new Response(
       JSON.stringify({
-        id: data.id,
-        amount: data.amount,
-        currency: data.currency,
-        receipt: data.receipt,
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        receipt: order.receipt,
+        key_id: razorpayKeyId,
       }),
       {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
       }
     );
-  } catch (error) {
-    console.error('Edge function error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  } catch (err) {
+    console.error("create-order error:", err);
+    return new Response(JSON.stringify({ error: "Internal server error", message: err.message }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   }
 });

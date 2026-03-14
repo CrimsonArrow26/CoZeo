@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import Header from '../../components/Header';
 import { Footer } from '../../components/SubscribeFooter';
-import { useProduct } from '../../hooks/useProducts';
+import { useProduct, productKeys } from '../../hooks/useProducts';
 import { ArrowLeft, Plus, X, Save, Trash2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice } from '../../lib/utils';
@@ -16,6 +17,7 @@ const COLORS = ['Black', 'White', 'Gray', 'Navy', 'Red', 'Blue', 'Green', 'Beige
 export default function AdminProductEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: product, isLoading } = useProduct(id || '');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -131,18 +133,26 @@ export default function AdminProductEditPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
+    console.log('Saving product:', { id, productId: product?.id, hasProduct: !!product });
     try {
-      const { error } = id 
-        ? await supabase.from('products').update(formData).eq('id', id)
+      if (id && !product?.id) {
+        throw new Error('Product ID not loaded yet');
+      }
+      
+      const { error } = id && product?.id
+        ? await supabase.from('products').update(formData).eq('id', product.id)
         : await supabase.from('products').insert(formData).select().single();
       
       if (error) throw error;
       
+      // Invalidate all product queries to refresh cache across the site
+      await queryClient.invalidateQueries({ queryKey: productKeys.all });
+      
       toast.success(id ? 'Product saved successfully' : 'Product created successfully');
       navigate('/admin/products');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error);
-      toast.error('Failed to save product');
+      toast.error('Failed to save product: ' + (error?.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -152,8 +162,11 @@ export default function AdminProductEditPage() {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
     
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const { error } = await supabase.from('products').delete().eq('id', product?.id);
       if (error) throw error;
+      
+      // Invalidate all product queries after delete
+      await queryClient.invalidateQueries({ queryKey: productKeys.all });
       
       toast.success('Product deleted successfully');
       navigate('/admin/products');
@@ -184,37 +197,34 @@ export default function AdminProductEditPage() {
     <div className="page-wrapper">
       <Header />
       
-      <div className="section _100px">
-        <div className="container">
+      <div className="section" style={{ padding: '40px 0' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
           {/* Header */}
-          <div className="admin-header">
+          <div className="admin-header" style={{ marginBottom: 32 }}>
             <Link to="/admin/products" className="back-link">
               <ArrowLeft size={18} />
               Back to Products
             </Link>
-            <button 
-              className="primary-button"
-              onClick={() => navigate('/admin/products/new')}
-            >
-              <Plus size={18} />
-              Add Product
-            </button>
-            <h1>Edit Product</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700 }}>
+              {id ? 'Edit Product' : 'Add Product'}
+            </h1>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button 
-                className="icon-btn delete"
-                onClick={handleDelete}
-                title="Delete Product"
-              >
-                <Trash2 size={18} />
-              </button>
+              {id && (
+                <button 
+                  className="icon-btn delete"
+                  onClick={handleDelete}
+                  title="Delete Product"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
               <button 
                 className="primary-button"
                 onClick={handleSave}
                 disabled={isSaving}
               >
                 <Save size={18} />
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? 'Saving...' : (id ? 'Save Changes' : 'Create Product')}
               </button>
             </div>
           </div>
