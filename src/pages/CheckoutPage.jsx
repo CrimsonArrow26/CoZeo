@@ -97,7 +97,7 @@ export default function CheckoutPage() {
           order: {
             user_id: user.id,
             subtotal,
-            discount: discountAmount,
+            discount_amount: discountAmount,
             coupon_code: appliedCoupon?.code || null,
             total: finalTotal,
             payment_method: 'razorpay',
@@ -152,7 +152,7 @@ export default function CheckoutPage() {
         order: {
           user_id: user.id,
           subtotal,
-          discount: discountAmount,
+          discount_amount: discountAmount,
           coupon_code: appliedCoupon?.code || null,
           total: finalTotal,
           payment_method: paymentMethod,
