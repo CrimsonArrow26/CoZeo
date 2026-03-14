@@ -5,6 +5,7 @@ import { Footer } from '../../components/SubscribeFooter';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrders } from '../../hooks/useOrders';
 import { useProducts } from '../../hooks/useProducts';
+import { formatPrice } from '../../lib/utils';
 import { Package, Users, ShoppingBag, DollarSign, Tag } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -67,7 +68,7 @@ export default function AdminDashboardPage() {
                 <div className="admin-section">
                   <h2 className="animated-title">Admin Dashboard</h2>
                   
-                  <div className="stats-grid">
+                  <div className="stats-grid" style={{ marginBottom: '60px' }}>
                     <div className="stat-card">
                       <div className="stat-icon">
                         <Package size={24} />
@@ -93,7 +94,7 @@ export default function AdminDashboardPage() {
                         <DollarSign size={24} />
                       </div>
                       <div className="stat-info">
-                        <p className="stat-value">₹{(stats.totalRevenue / 100).toLocaleString()}</p>
+                        <p className="stat-value">{formatPrice(stats.totalRevenue)}</p>
                         <p className="stat-label">Revenue</p>
                       </div>
                     </div>

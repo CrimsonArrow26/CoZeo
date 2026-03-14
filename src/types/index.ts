@@ -85,6 +85,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  display_id: string;
   user_id: string;
   status: OrderStatus;
   status_history: StatusHistoryEntry[];

@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { QueryProvider } from './providers/QueryProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './CartContext.jsx';
@@ -21,10 +22,23 @@ import { Toaster } from 'sonner';
 
 import OrderTrackingPage from './pages/OrderTrackingPage';
 
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+}
+
 function AppContent() {
   useLenis();
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/shop" element={<ShopPage />} />
       <Route path="/product/:slug" element={<ProductPage />} />
@@ -43,6 +57,7 @@ function AppContent() {
       <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
       <Route path="/admin/coupons" element={<AdminRoute><AdminCouponsPage /></AdminRoute>} />
     </Routes>
+    </>
   );
 }
 

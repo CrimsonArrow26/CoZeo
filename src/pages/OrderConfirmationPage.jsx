@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { Footer } from '../components/SubscribeFooter';
 import { useOrder, useOrderItems } from '../hooks/useOrders';
-import { formatPrice, formatDate } from '../lib/utils';
+import { formatPrice, formatDateTime } from '../lib/utils';
 import { CheckCircle, Package, Truck, Home } from 'lucide-react';
 
 export default function OrderConfirmationPage() {
@@ -54,9 +54,9 @@ export default function OrderConfirmationPage() {
                 <CheckCircle size={64} />
               </div>
               <h1>Order Placed!</h1>
-              <p className="order-id">Order #{order.id.slice(-8).toUpperCase()}</p>
+              <p className="order-id">Order #{order.display_id || order.id.slice(-8).toUpperCase()}</p>
               <p className="confirmation-date">
-                Placed on {formatDate(order.created_at)}
+                Placed on {formatDateTime(order.created_at)}
               </p>
             </div>
 

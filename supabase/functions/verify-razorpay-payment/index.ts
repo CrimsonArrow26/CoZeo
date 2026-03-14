@@ -2,9 +2,6 @@
 // Deploy with: supabase functions deploy verify-razorpay-payment
 // Set secrets: supabase secrets set RAZORPAY_KEY_SECRET=your_secret
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createHmac } from 'https://deno.land/std@0.168.0/crypto/mod.ts';
-
 const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
 
 interface VerifyRequest {
@@ -19,7 +16,31 @@ function verifySignature(orderId: string, paymentId: string, signature: string, 
   return expected === signature;
 }
 
-serve(async (req: Request) => {
+// Simple HMAC implementation for Deno
+function createHmac(algorithm: string, key: string) {
+  const encoder = new TextEncoder();
+  const cryptoKey = crypto.subtle.importKey(
+    'raw',
+    encoder.encode(key),
+    { name: 'HMAC', hash: algorithm },
+    false,
+    ['sign']
+  );
+  
+  return {
+    update: (data: string) => ({
+      digest: async () => {
+        const key = await cryptoKey;
+        const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+        return Array.from(new Uint8Array(signature))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+      }
+    })
+  };
+}
+
+Deno.serve(async (req: Request) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -56,12 +77,9 @@ serve(async (req: Request) => {
     }
 
     // Verify signature
-    const isValid = verifySignature(
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      RAZORPAY_KEY_SECRET
-    );
+    const hmac = createHmac('SHA-256', RAZORPAY_KEY_SECRET);
+    const expected = await hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`).digest();
+    const isValid = expected === razorpay_signature;
 
     if (!isValid) {
       return new Response(

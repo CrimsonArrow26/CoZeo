@@ -274,7 +274,7 @@ export default function DashboardPage() {
 
               {/* Orders Tab */}
               {activeTab === 'orders' && (
-                <div className="dashboard-section">
+                <div className="dashboard-section" style={{ marginBottom: '60px' }}>
                   <h2>My Orders</h2>
                   {orders?.length === 0 ? (
                     <div className="empty-state">
@@ -283,25 +283,43 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="orders-list">
-                      {orders?.map(order => (
-                        <div key={order.id} className="order-card">
-                          <div className="order-header">
-                            <div>
-                              <p className="order-id">#{order.id.slice(-8).toUpperCase()}</p>
-                              <p className="order-date">{formatDate(order.created_at)}</p>
+                      {orders?.map(order => {
+                        const firstItem = order.items?.[0];
+                        return (
+                          <div 
+                            key={order.id} 
+                            className="order-card-compact"
+                            onClick={() => navigate(`/orders/${order.id}/track`)}
+                          >
+                            <div className="order-compact-main">
+                              {firstItem && (
+                                <div className="order-compact-thumb">
+                                  <img 
+                                    src={firstItem.product_image || '/placeholder-product.jpg'} 
+                                    alt={firstItem.product_name}
+                                  />
+                                </div>
+                              )}
+                              <div className="order-compact-info">
+                                <p className="order-id">#{order.display_id || order.id.slice(-8).toUpperCase()}</p>
+                                <p className="order-date">{formatDate(order.created_at)}</p>
+                                {firstItem && (
+                                  <p className="item-name">{firstItem.product_name}</p>
+                                )}
+                              </div>
+                              <div className="order-compact-status">
+                                <span className={`order-status ${order.status}`}>
+                                  {order.status}
+                                </span>
+                                <span className={`payment-status ${order.payment_status}`}>
+                                  {order.payment_status}
+                                </span>
+                                <span className="order-compact-total">{formatPrice(order.total)}</span>
+                              </div>
                             </div>
-                            <span className={`order-status ${order.status}`}>
-                              {order.status}
-                            </span>
                           </div>
-                          <div className="order-footer">
-                            <span className="order-total">{formatPrice(order.total)}</span>
-                            <Link to={`/orders/${order.id}/track`} className="track-link">
-                              Track Order
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

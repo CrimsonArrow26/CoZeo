@@ -69,7 +69,7 @@ export default function OrderTrackingPage() {
           <div className="order-tracking">
             {/* Header */}
             <div className="tracking-header">
-              <h1>Order #{order.id.slice(-8).toUpperCase()}</h1>
+              <h1>Order #{order.display_id || order.id.slice(-8).toUpperCase()}</h1>
               <p className="tracking-date">Placed on {formatDate(order.created_at)}</p>
             </div>
 

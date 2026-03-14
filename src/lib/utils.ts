@@ -21,6 +21,16 @@ export const formatDate = (d: string | Date) => {
   }).format(new Date(d));
 };
 
+export const formatDateTime = (d: string | Date) => {
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(d));
+};
+
 export const generateOrderId = () => {
   const year = new Date().getFullYear();
   const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0');

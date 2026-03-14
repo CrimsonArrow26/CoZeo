@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import Header from '../components/Header';
 import { SubscribeSection, Footer } from '../components/SubscribeFooter';
 import { useCart } from '../CartContext';
@@ -8,6 +9,7 @@ import { useCreateOrder } from '../hooks/useOrders';
 import { useValidateCoupon } from '../hooks/useCoupons';
 import { formatPrice } from '../lib/utils';
 import { openRazorpayCheckout } from '../lib/razorpay';
+import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
 const INDIAN_STATES = [
@@ -22,6 +24,7 @@ export default function CheckoutPage() {
   const { cartItems, subtotal, clearCart } = useCart();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const createOrder = useCreateOrder();
   
   const [step, setStep] = useState(1);
@@ -123,7 +126,53 @@ export default function CheckoutPage() {
           userName: profile?.name || formData.name || '',
           onSuccess: async (paymentId, razorpayOrderId) => {
             console.log('Razorpay payment success:', { paymentId, razorpayOrderId });
-            toast.success('Payment successful!');
+            
+            // Update order status to paid
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update({ 
+                payment_status: 'paid',
+                status: 'confirmed',
+                razorpay_payment_id: paymentId,
+                razorpay_order_id: razorpayOrderId
+              })
+              .eq('id', order.id);
+            
+            if (updateError) {
+              console.error('Failed to update order status:', updateError);
+              toast.error('Payment succeeded but order update failed. Contact support.');
+            } else {
+              console.log('Order status updated to paid');
+              toast.success('Payment successful!');
+              
+              // Fetch fresh data to confirm update
+              const { data: updatedOrder } = await supabase
+                .from('orders')
+                .select('id, status, payment_status, display_id')
+                .eq('id', order.id)
+                .single();
+              console.log('Verified updated order:', updatedOrder);
+              
+              // Update cache immediately with new status
+              queryClient.setQueryData(['orders', 'detail', order.id], (oldData) => {
+                if (oldData) {
+                  return { ...oldData, payment_status: 'paid', status: 'confirmed' };
+                }
+                return oldData;
+              });
+              // Also update this order in the list cache
+              queryClient.setQueryData(['orders', 'list'], (oldData) => {
+                if (oldData && Array.isArray(oldData)) {
+                  return oldData.map(o => 
+                    o.id === order.id 
+                      ? { ...o, payment_status: 'paid', status: 'confirmed' }
+                      : o
+                  );
+                }
+                return oldData;
+              });
+            }
+            
             clearCart();
             navigate(`/order-confirmation/${order.id}`);
           },

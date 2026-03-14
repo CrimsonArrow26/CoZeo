@@ -70,7 +70,12 @@ const orderKeys = {
   tracking: (id: string) => [...orderKeys.all, 'tracking', id] as const,
 };
 
-// Fetch user's orders
+// Extended Order with items
+export interface OrderWithItems extends Order {
+  items: OrderItem[];
+}
+
+// Fetch user's orders with their items
 export function useOrders() {
   return useQuery({
     queryKey: orderKeys.lists(),
@@ -78,13 +83,44 @@ export function useOrders() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       
-      const data = await supabaseFetch('orders', {
+      // Fetch orders
+      const orders = await supabaseFetch('orders', {
         select: '*',
         filters: { user_id: user.id },
         order: { column: 'created_at', ascending: false }
-      });
-      return data as Order[];
+      }) as Order[];
+      
+      // Fetch order items for all orders
+      if (orders.length > 0) {
+        const orderIds = orders.map(o => o.id);
+        const { data: items, error: itemsError } = await supabase
+          .from('order_items')
+          .select('*')
+          .in('order_id', orderIds);
+        
+        if (itemsError) {
+          console.error('Failed to fetch order items:', itemsError);
+        }
+        
+        // Group items by order
+        const itemsByOrder = (items || []).reduce((acc, item) => {
+          if (!acc[item.order_id]) acc[item.order_id] = [];
+          acc[item.order_id].push(item);
+          return acc;
+        }, {} as Record<string, OrderItem[]>);
+        
+        // Add items to each order
+        return orders.map(order => ({
+          ...order,
+          items: itemsByOrder[order.id] || []
+        })) as OrderWithItems[];
+      }
+      
+      return orders as OrderWithItems[];
     },
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -102,6 +138,9 @@ export function useOrder(id: string) {
       return data as Order;
     },
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -131,6 +170,19 @@ export function useCreateOrder() {
       order: Partial<Order>;
       items: Partial<OrderItem>[];
     }) => {
+      // Generate display_id using Supabase function
+      const { data: displayIdData, error: displayIdError } = await supabase
+        .rpc('generate_order_display_id');
+      
+      if (displayIdError) {
+        console.error('Failed to generate display_id:', displayIdError);
+        // Fallback: generate locally
+        const timestamp = Date.now();
+        order.display_id = `CO${timestamp.toString().slice(-6)}`;
+      } else {
+        order.display_id = displayIdData;
+      }
+
       // Create order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')

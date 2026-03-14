@@ -85,7 +85,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="main-footer">
+    <footer className="main-footer" style={{ marginTop: '60px' }}>
       <div className="footer-widgets-box">
         <div className="w-layout-blockcontainer container w-container">
           <div className="w-layout-grid footer-grid">
@@ -156,7 +156,6 @@ export function Footer() {
           <p className="footer-copyright">
             © Copyright <span className="footer-copyright-text">CoZeo</span>
             {' '}| Design by <span className="footer-copyright-text">PY</span>
-            {' '}| Powered by <span className="footer-copyright-text">BitBulb</span>
           </p>
         </div>
       </div>
