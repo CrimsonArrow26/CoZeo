@@ -113,6 +113,8 @@ export default function CheckoutPage() {
           items: orderItems,
         });
 
+        console.log('Order created, opening Razorpay checkout:', order);
+
         // Open Razorpay checkout
         openRazorpayCheckout({
           amount: finalTotal,
@@ -120,16 +122,18 @@ export default function CheckoutPage() {
           userEmail: user.email || '',
           userName: profile?.name || formData.name || '',
           onSuccess: async (paymentId, razorpayOrderId) => {
-            // Update order with payment details
+            console.log('Razorpay payment success:', { paymentId, razorpayOrderId });
             toast.success('Payment successful!');
             clearCart();
             navigate(`/order-confirmation/${order.id}`);
           },
           onError: (error) => {
+            console.error('Razorpay payment error:', error);
             toast.error('Payment failed: ' + error.message);
           },
         });
       } catch (error) {
+        console.error('Razorpay order creation error:', error);
         toast.error('Failed to initiate payment. Please try again.');
       }
       return;

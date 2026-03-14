@@ -22,6 +22,9 @@ async function createRazorpayOrder(amount: number, orderId: string, userEmail: s
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rbjivulozgubrenzwcjx.supabase.co';
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
   
+  console.log('Creating Razorpay order:', { amount, orderId, userEmail, userName });
+  console.log('Edge Function URL:', `${supabaseUrl}/functions/v1/create-razorpay-order`);
+  
   const response = await fetch(`${supabaseUrl}/functions/v1/create-razorpay-order`, {
     method: 'POST',
     headers: { 
@@ -36,12 +39,17 @@ async function createRazorpayOrder(amount: number, orderId: string, userEmail: s
     }),
   });
   
+  console.log('Edge Function response status:', response.status);
+  
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error('Failed to create Razorpay order: ' + error);
+    const errorText = await response.text();
+    console.error('Edge Function error:', response.status, errorText);
+    throw new Error('Failed to create Razorpay order: ' + errorText);
   }
   
-  return response.json();
+  const data = await response.json();
+  console.log('Razorpay order created:', data);
+  return data;
 }
 
 // Verify Razorpay payment signature
