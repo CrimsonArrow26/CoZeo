@@ -333,7 +333,7 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu */}
-        <div className={`mobile-menu-outer${mobileOpen ? ' open' : ''}`}>
+        <div className={`mobile-menu-outer ${mobileOpen ? 'open' : ''}`}>
           <div className={`bg mobile-menu-bg${mobileOpen ? ' visible' : ''}`} onClick={() => setMobileOpen(false)}></div>
           <div className={`mobile-menu${mobileOpen ? ' open' : ''}`}>
             <div className="mobile-logo-box">
