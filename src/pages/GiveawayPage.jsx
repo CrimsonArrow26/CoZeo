@@ -37,6 +37,42 @@ export default function GiveawayPage() {
     }
   };
 
+  // Submit to Google Form using pre-filled URL
+  const submitToGoogleForm = async (data) => {
+    // Replace these with your actual Google Form field IDs
+    // To get these: Open your Google Form → 3 dots → Get pre-filled link
+    // Fill in fields and submit to generate the URL with entry IDs
+    const GOOGLE_FORM_ID = 'YOUR_GOOGLE_FORM_ID';
+    const ENTRY_NAME = 'entry.XXXXXXXX'; // Replace with your form's name field ID
+    const ENTRY_EMAIL = 'entry.XXXXXXXX'; // Replace with your form's email field ID
+    const ENTRY_PHONE = 'entry.XXXXXXXX'; // Replace with your form's phone field ID
+    const ENTRY_COLLEGE = 'entry.XXXXXXXX'; // Replace with your form's college field ID
+    const ENTRY_INSTAGRAM = 'entry.XXXXXXXX'; // Replace with your form's instagram field ID
+    const ENTRY_TWITTER = 'entry.XXXXXXXX'; // Replace with your form's twitter field ID
+
+    const formUrl = `https://docs.google.com/forms/d/e/${GOOGLE_FORM_ID}/formResponse`;
+    
+    const formData = new FormData();
+    formData.append(ENTRY_NAME, data.name);
+    formData.append(ENTRY_EMAIL, data.email);
+    if (data.phone) formData.append(ENTRY_PHONE, data.phone);
+    if (data.college) formData.append(ENTRY_COLLEGE, data.college);
+    if (data.instagram) formData.append(ENTRY_INSTAGRAM, data.instagram);
+    if (data.twitter) formData.append(ENTRY_TWITTER, data.twitter);
+
+    try {
+      // Use fetch with no-cors to submit silently
+      await fetch(formUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: formData,
+      });
+    } catch (error) {
+      // Silent fail - Google Form submission is best effort
+      console.log('Google Form submission attempted');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.agreed) {
@@ -79,7 +115,7 @@ export default function GiveawayPage() {
         return;
       }
 
-      // Submit entry
+      // Submit entry to Supabase
       const { error } = await supabase.from('giveaway_entries').insert({
         name: formData.name,
         email: formData.email,
@@ -91,6 +127,9 @@ export default function GiveawayPage() {
       });
 
       if (error) throw error;
+
+      // Submit to Google Form (using pre-filled URL)
+      await submitToGoogleForm(formData);
 
       setIsSuccess(true);
       toast.success("You're in! 🎉 We'll announce the winner soon.");

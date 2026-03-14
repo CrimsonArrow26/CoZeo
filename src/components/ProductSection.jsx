@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useNewDrops } from '../hooks/useProducts';
 import { formatPrice } from '../lib/utils';
@@ -46,52 +46,17 @@ function ProductCard({ product, index }) {
 export default function ProductSection() {
   const titleRef = useRef();
   const carouselRef = useRef();
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
   const { data: products, isLoading } = useNewDrops();
-
-  const checkScroll = () => {
-    const el = carouselRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 0);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
-  };
-
-  useEffect(() => {
-    const el = carouselRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll);
-    return () => el.removeEventListener('scroll', checkScroll);
-  }, [products]);
-
-  const scroll = (direction) => {
-    const el = carouselRef.current;
-    if (!el) return;
-    const cardWidth = el.querySelector('.w-dyn-item')?.offsetWidth || 300;
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
-    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-  };
 
   return (
     <section id="Product-Section" className="product-section pb-zero">
       <div className="w-layout-blockcontainer container w-container">
-        <div ref={titleRef} className="section-title-box four visible">
+        <div ref={titleRef} className="section-title-box four visible" style={{ textAlign: 'left', alignItems: 'flex-start' }}>
           <h2 className="section-title">new drops</h2>
           <p className="section-text">Stand out with our latest collection—bold designs, premium fabrics, and street-ready fits. Once they're gone, they're gone. Don't miss out!</p>
         </div>
-        <div className="product-carousel-wrapper">
-          <button 
-            className={`carousel-arrow carousel-arrow-left ${!canScrollLeft ? 'disabled' : ''}`}
-            onClick={() => scroll('left')}
-            disabled={!canScrollLeft}
-            aria-label="Previous products"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-          </button>
-          <div className="w-dyn-list" ref={carouselRef}>
+        <div className="product-carousel-wrapper" style={{ display: 'block' }}>
+          <div className="w-dyn-list" ref={carouselRef} style={{ overflowX: 'auto' }}>
             {isLoading ? (
               <div className="loading-products">Loading products...</div>
             ) : (
@@ -102,16 +67,6 @@ export default function ProductSection() {
               </div>
             )}
           </div>
-          <button 
-            className={`carousel-arrow carousel-arrow-right ${!canScrollRight ? 'disabled' : ''}`}
-            onClick={() => scroll('right')}
-            disabled={!canScrollRight}
-            aria-label="Next products"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </button>
         </div>
       </div>
     </section>
