@@ -160,9 +160,10 @@ export function useSpotlightProduct() {
         .select('*')
         .eq('is_spotlight', true)
         .eq('is_active', true)
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (error) throw error;
-      return data as Product;
+      return data as Product | null;
     },
   });
 }
@@ -203,10 +204,19 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Product>) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Product> }) => {
+      // If setting this product as spotlight, clear spotlight from all others first
+      if (updates.is_spotlight === true) {
+        const { error: clearError } = await supabase
+          .from('products')
+          .update({ is_spotlight: false })
+          .eq('is_spotlight', true);
+        if (clearError) console.error('Failed to clear previous spotlight:', clearError);
+      }
+      
       const { data, error } = await supabase.from('products').update(updates).eq('id', id).select().single();
       if (error) throw error;
-      return data;
+      return data as Product;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: productKeys.all });

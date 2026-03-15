@@ -37,7 +37,20 @@ export default function DealSection() {
     );
   }
 
-  if (!product) return null;
+  if (!product) {
+    return (
+      <section className="deal-section">
+        <div className="container">
+          <div className="loading">
+            <p style={{ marginBottom: 12 }}>No spotlight product set</p>
+            <p style={{ fontSize: 14, color: '#666' }}>
+              Go to Admin → Products and set "Is Spotlight" on a product to display it here
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const images = product.images?.slice(0, 4) || [];
   const displayPrice = product.discount_price || product.price;

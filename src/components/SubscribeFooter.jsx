@@ -155,7 +155,7 @@ export function Footer() {
         <div className="w-layout-blockcontainer container w-container">
           <p className="footer-copyright">
             © Copyright <span className="footer-copyright-text">CoZeo</span>
-            {' '}| Design by <span className="footer-copyright-text">PY</span>
+            {' '}| Design by <a href="https://www.linkedin.com/in/prathamesh-yewale/" target="_blank" rel="noopener noreferrer" className="footer-copyright-text" style={{ textDecoration: 'none' }}>Prathamesh Yewale</a>
           </p>
         </div>
       </div>
