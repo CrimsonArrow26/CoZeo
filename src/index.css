@@ -2523,6 +2523,29 @@ html {
   margin-top: -12px !important;
 }
 
+/* ===== CATEGORY TITLE CENTERING FIX ===== */
+.category-title {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  text-align: center !important;
+  width: 100% !important;
+  padding: 0 20px !important;
+  right: auto !important;
+}
+
+/* Override reveal animation transforms on title */
+.reveal-left .category-title,
+.reveal-right .category-title,
+.reveal-up .category-title,
+.category-block.visible .category-title,
+.category-block .category-title {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
+  margin-left: 0 !important;
+  color: #a50c0c !important;
+}
+
 /* ===== THEME BUTTON FIXES ===== */
 /* Fix border radius on hover background to match button */
 .theme-btn-bg {

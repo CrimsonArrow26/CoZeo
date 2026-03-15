@@ -212,7 +212,11 @@ export default function AdminOrdersPage() {
                               <Truck size={16} />
                               Update Status
                             </button>
-                            <Link to={`/orders/${order.id}/track`} className="track-link">
+                            <Link 
+                              to={`/orders/${order.id}/track`} 
+                              state={{ from: 'admin' }}
+                              className="track-link"
+                            >
                               View Details
                             </Link>
                           </div>

@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import { Footer } from '../components/SubscribeFooter';
 import { useOrder, useOrderItems } from '../hooks/useOrders';
@@ -15,8 +15,12 @@ const STAGES = [
 
 export default function OrderTrackingPage() {
   const { id } = useParams();
+  const location = useLocation();
   const { data: order, isLoading } = useOrder(id || '');
   const { data: orderItems } = useOrderItems(id || '');
+  
+  // Check if user came from admin orders
+  const fromAdmin = location.state?.from === 'admin';
 
   if (isLoading) {
     return (
@@ -154,8 +158,12 @@ export default function OrderTrackingPage() {
 
             {/* Actions */}
             <div className="tracking-actions">
-              <Link to="/dashboard?tab=orders" className="secondary-button">
-                Back to Orders
+              <Link 
+                to={fromAdmin ? '/admin/orders' : '/dashboard?tab=orders'} 
+                state={fromAdmin ? undefined : { from: 'tracking' }}
+                className="secondary-button"
+              >
+                {fromAdmin ? '← Back to Manage Orders' : 'Back to Orders'}
               </Link>
               {order.status === 'delivered' && (
                 <Link to={`/orders/${order.id}/return`} className="primary-button">

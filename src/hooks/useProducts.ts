@@ -215,12 +215,15 @@ export function useUpdateProduct() {
   });
 }
 
-// Admin: Delete product
+// Admin: Delete product (soft delete - set is_active to false)
 export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: false })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

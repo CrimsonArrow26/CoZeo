@@ -62,10 +62,11 @@ export function WhyChooseUs() {
 const categories = [
   { slug: 'man',   title: 'Man',   image: '/images/1-1.jpeg' },
   { slug: 'woman', title: 'Woman', image: '/images/2.jpeg'   },
+  { slug: 'unisex', title: 'Unisex', image: '/images/1-2-1.png' },
 ];
 
 export function CategorySection() {
-  const refs = [useSideReveal('left', 0), useSideReveal('right', 150)];
+  const refs = [useSideReveal('left', 0), useSideReveal('right', 150), useSideReveal('left', 300)];
 
   return (
     <section id="Category-Section" className="category-section">

@@ -10,7 +10,7 @@ import { formatPrice } from '../../lib/utils';
 import { supabase } from '../../integrations/supabase/client';
 
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
-const CATEGORIES = ['man', 'woman'];
+const CATEGORIES = ['man', 'woman', 'unisex'];
 const BADGES = ['sale', 'drop', 'new'];
 const COLORS = ['Black', 'White', 'Gray', 'Navy', 'Red', 'Blue', 'Green', 'Beige', 'Brown', 'Pink'];
 
@@ -20,6 +20,7 @@ export default function AdminProductEditPage() {
   const queryClient = useQueryClient();
   const { data: product, isLoading } = useProduct(id || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [customColor, setCustomColor] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -66,7 +67,7 @@ export default function AdminProductEditPage() {
         badge: product.badge,
         images: product.images || [],
         sizes: product.sizes || [],
-        colors: product.colors || [],
+        colors: (product.colors || []).filter((c: string) => COLORS.includes(c)),
         specs: {
           fabric_type: product.specs?.fabric_type || '',
           fit_style: product.specs?.fit_style || '',
@@ -129,6 +130,18 @@ export default function AdminProductEditPage() {
         ? prev.colors.filter(c => c !== color)
         : [...prev.colors, color]
     }));
+  };
+
+  const handleAddCustomColor = () => {
+    const trimmedColor = customColor.trim();
+    if (trimmedColor && !formData.colors.includes(trimmedColor)) {
+      setFormData(prev => ({ ...prev, colors: [...prev.colors, trimmedColor] }));
+      setCustomColor('');
+    }
+  };
+
+  const removeColor = (color: string) => {
+    setFormData(prev => ({ ...prev, colors: prev.colors.filter(c => c !== color) }));
   };
 
   const handleSave = async () => {
@@ -427,7 +440,10 @@ export default function AdminProductEditPage() {
               {/* Colors */}
               <div className="coupon-form">
                 <h3>Available Colors</h3>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Select from preset colors or add custom colors</p>
+                
+                {/* Preset Colors */}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
                   {COLORS.map(color => (
                     <button
                       key={color}
@@ -449,6 +465,76 @@ export default function AdminProductEditPage() {
                     </button>
                   ))}
                 </div>
+
+                {/* Custom Color Input */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <input
+                    type="text"
+                    value={customColor}
+                    onChange={(e) => setCustomColor(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddCustomColor()}
+                    placeholder="Enter custom color name..."
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: '2px solid #e5e5e5',
+                      fontSize: 14,
+                      outline: 'none'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomColor}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: 8,
+                      border: '2px solid #121212',
+                      background: '#121212',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <Plus size={16} />
+                    Add Color
+                  </button>
+                </div>
+
+                {/* Selected Custom Colors */}
+                {formData.colors.filter(c => !COLORS.includes(c)).length > 0 && (
+                  <div>
+                    <p style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>Custom Colors:</p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {formData.colors.filter(c => !COLORS.includes(c)).map(color => (
+                        <span
+                          key={color}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: 20,
+                            background: '#121212',
+                            color: '#fff',
+                            fontSize: 13,
+                            fontWeight: 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => removeColor(color)}
+                          title="Click to remove"
+                        >
+                          {color}
+                          <X size={14} />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Specifications */}
