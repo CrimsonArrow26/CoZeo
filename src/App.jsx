@@ -21,6 +21,7 @@ import AdminRoute from './components/AdminRoute';
 import { Toaster } from 'sonner';
 
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -48,6 +49,7 @@ function AppContent() {
       <Route path="/orders/:id/track" element={<OrderTrackingPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/giveaway" element={<GiveawayPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

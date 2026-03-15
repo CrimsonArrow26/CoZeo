@@ -74,11 +74,13 @@ function CartSidebar({ onClose }) {
   );
 }
 
-function LoginSidebar({ isSignup, onClose, onToggle, onLogin }) {
+function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,6 +115,27 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin }) {
     // OAuth will redirect, so no need to close modal
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    
+    setIsLoading(true);
+    const result = await resetPassword(resetEmail);
+    
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      toast.success('Password reset email sent! Check your inbox.');
+      setIsForgotPassword(false);
+      setResetEmail('');
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
     <div className={isSignup ? "account-signup-sidebar open" : "account-login-sidebar open"}>
       <div className="account-sidebar-header">
@@ -124,76 +147,103 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin }) {
       </div>
       <div className="account-sidebar-form-box">
         <div className="account-login-form-block w-form">
-          <form className="account-login-form" onSubmit={handleSubmit}>
-            {isSignup && (
+          {isForgotPassword ? (
+            <form className="account-login-form" onSubmit={handleForgotPassword}>
               <div className="account-login-form-group">
-                <label className="account-login-label">Full Name *</label>
+                <label className="account-login-label">Email address *</label>
                 <input 
                   className="account-login-input w-input" 
-                  type="text" 
+                  type="email" 
                   required 
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Enter your full name"
+                  value={resetEmail}
+                  onChange={e => setResetEmail(e.target.value)}
+                  placeholder="Enter your email to reset password"
                 />
               </div>
-            )}
-            <div className="account-login-form-group">
-              <label className="account-login-label">Email address *</label>
               <input 
-                className="account-login-input w-input" 
-                type="email" 
-                required 
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                type="submit" 
+                className="account-login-btn w-button" 
+                value={isLoading ? 'Sending...' : 'Send Reset Link'}
+                disabled={isLoading}
               />
-            </div>
-            <div className="account-login-form-group">
-              <label className="account-login-label">Password *</label>
-              <input 
-                className="account-login-input w-input" 
-                type="password" 
-                required 
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                minLength={6}
-              />
-            </div>
-            <input 
-              type="submit" 
-              className="account-login-btn w-button" 
-              value={isLoading ? 'Please wait...' : (isSignup ? 'Sign Up' : 'Log in')}
-              disabled={isLoading}
-            />
-            {!isSignup && (
-              <div className="account-login-form-footer">
-                <label className="w-checkbox account-login-checkbox-field">
-                  <input type="checkbox" className="w-checkbox-input account-login-checkbox" />
-                  <span className="account-login-checkbox-label w-form-label">Remember me</span>
-                </label>
-                <a href="#" className="account-login-forget-pass-link w-inline-block" onClick={e => { e.preventDefault(); toast.info('Password reset coming soon'); }}>
-                  <p className="account-login-forget-pass-text">Lost your password?</p>
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <a 
+                  href="#" 
+                  className="account-login-forget-pass-link w-inline-block" 
+                  onClick={e => { e.preventDefault(); setIsForgotPassword(false); }}
+                >
+                  <p className="account-login-forget-pass-text">← Back to login</p>
                 </a>
               </div>
-            )}
-            <div className="account-login-dvider-box">
-              <div className="account-login-dvider"></div>
-              <p className="account-login-dvider-text">Or {isSignup ? 'Signup' : 'login'} with</p>
-              <div className="account-login-dvider"></div>
-            </div>
-            <div className="account-login-social-box">
-              <a href="#" className="account-login-social-button facebook w-inline-block" onClick={e => { e.preventDefault(); toast.info('Facebook login coming soon'); }}>
-                <img src="/images/facebook.png" alt="" className="account-login-social-button-icon" />
-                <div className="account-login-social-button-text">Facebook</div>
-              </a>
-              <a href="#" className="account-login-social-button google w-inline-block" onClick={e => { e.preventDefault(); handleGoogleSignIn(); }}>
-                <img src="/images/google.avif" alt="" className="account-login-social-button-icon" />
-                <div className="account-login-social-button-text">Google</div>
-              </a>
-            </div>
-          </form>
+            </form>
+          ) : (
+            <form className="account-login-form" onSubmit={handleSubmit}>
+              {isSignup && (
+                <div className="account-login-form-group">
+                  <label className="account-login-label">Full Name *</label>
+                  <input 
+                    className="account-login-input w-input" 
+                    type="text" 
+                    required 
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              )}
+              <div className="account-login-form-group">
+                <label className="account-login-label">Email address *</label>
+                <input 
+                  className="account-login-input w-input" 
+                  type="email" 
+                  required 
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div className="account-login-form-group">
+                <label className="account-login-label">Password *</label>
+                <input 
+                  className="account-login-input w-input" 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  minLength={6}
+                />
+              </div>
+              <input 
+                type="submit" 
+                className="account-login-btn w-button" 
+                value={isLoading ? 'Please wait...' : (isSignup ? 'Sign Up' : 'Log in')}
+                disabled={isLoading}
+              />
+              {!isSignup && (
+                <div className="account-login-form-footer">
+                  <label className="w-checkbox account-login-checkbox-field">
+                    <input type="checkbox" className="w-checkbox-input account-login-checkbox" />
+                    <span className="account-login-checkbox-label w-form-label">Remember me</span>
+                  </label>
+                  <a href="#" className="account-login-forget-pass-link w-inline-block" onClick={e => { e.preventDefault(); setIsForgotPassword(true); }}>
+                    <p className="account-login-forget-pass-text">Lost your password?</p>
+                  </a>
+                </div>
+              )}
+              <div className="account-login-dvider-box">
+                <div className="account-login-dvider"></div>
+                <p className="account-login-dvider-text">Or {isSignup ? 'Signup' : 'login'} with</p>
+                <div className="account-login-dvider"></div>
+              </div>
+              <div className="account-login-social-box">
+                <a href="#" className="account-login-social-button google w-inline-block" onClick={e => { e.preventDefault(); handleGoogleSignIn(); }}>
+                  <img src="/images/google.avif" alt="" className="account-login-social-button-icon" />
+                  <div className="account-login-social-button-text">Google</div>
+                </a>
+              </div>
+            </form>
+          )}
         </div>
       </div>
       <div className="account-sidebar-footer">
@@ -243,7 +293,7 @@ function UserDropdown({ user, profile, isAdmin, onSignOut }) {
 
 export default function Header() {
   const { totalItems, cartOpen, setCartOpen } = useCart();
-  const { user, profile, isAdmin, signIn, signUp, signInWithGoogle, signOut } = useAuth();
+  const { user, profile, isAdmin, signIn, signUp, signInWithGoogle, signOut, resetPassword } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
@@ -396,6 +446,7 @@ export default function Header() {
               onClose={() => setLoginOpen(false)}
               onToggle={() => setIsSignup(p => !p)}
               onLogin={{ signIn, signUp, signInWithGoogle }}
+              resetPassword={resetPassword}
             />
             <div className="bg account-sidebar-overlay" onClick={() => setLoginOpen(false)}></div>
           </>
