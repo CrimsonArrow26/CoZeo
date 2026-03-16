@@ -1,3 +1,32 @@
+/* ===== CSS VARIABLES - NEW COLOR SCHEME ===== */
+:root {
+  /* Primary Palette */
+  --primary: #284B63;
+  --primary-dark: #153243;
+  --primary-light: #3d6b8a;
+  
+  /* Neutral Palette */
+  --bg-primary: #F4F9E9;
+  --bg-secondary: #EEF0EB;
+  --bg-card: #EEF0EB;
+  --border-color: #B4B8AB;
+  
+  /* Text Colors */
+  --text-dark: #153243;
+  --text-medium: #284B63;
+  --text-light: #5a7a8a;
+  --text-muted: #8a9aa3;
+  
+  /* Accent */
+  --accent: #284B63;
+  --accent-hover: #153243;
+  
+  /* Status */
+  --success: #22c55e;
+  --error: #e74c3c;
+  --warning: #f59e0b;
+}
+
 /* ===== KEYFRAMES ===== */
 @keyframes heroFadeIn {
   from { opacity: 0; }
@@ -78,7 +107,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: #fff;
+  background: var(--primary);
   width: 0%;
   transition: none;
 }
@@ -228,8 +257,8 @@
 }
 .why-us-block:hover .why-us-icon-box {
   animation: rotateIcon 0.7s ease forwards;
-  border-color: #121212;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(40, 75, 99, 0.15);
 }
 .why-us-block {
   transition: transform 0.3s ease;
@@ -241,7 +270,7 @@
   transition: color 0.3s ease;
 }
 .why-us-block:hover .why-us-title {
-  color: #555;
+  color: var(--primary);
 }
 
 /* ===== MOBILE: WHY US 2x2 GRID ===== */
@@ -355,7 +384,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #121212;
+  background: var(--primary);
   transition: width 0.3s ease;
 }
 .header-menu-link:hover::after {
@@ -424,7 +453,7 @@
   cursor: pointer;
   padding: 8px;
   color: #fff;
-  background: #121212;
+  background: var(--primary-dark);
   border: none;
   outline: none;
   border-radius: 8px;
@@ -513,7 +542,7 @@
 .mobile-menu-logo {
   font-size: 24px;
   font-weight: 700;
-  color: #121212;
+  color: var(--text-dark);
   text-decoration: none;
   letter-spacing: -0.5px;
 }
@@ -524,16 +553,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: var(--bg-secondary);
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  color: #121212;
+  color: var(--text-dark);
   transition: all 0.2s ease;
 }
 
 .mobile-menu-close:hover {
-  background: #121212;
+  background: var(--primary-dark);
   color: #fff;
 }
 
@@ -553,7 +582,7 @@
   display: flex;
   align-items: center;
   padding: 16px;
-  color: #121212;
+  color: var(--text-dark);
   text-decoration: none;
   font-size: 16px;
   font-weight: 500;
@@ -562,7 +591,7 @@
 }
 
 .mobile-nav-link:hover {
-  background: #f5f5f5;
+  background: var(--bg-secondary);
   transform: translateX(4px);
 }
 
@@ -577,7 +606,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #121212;
+  background: var(--primary);
   transition: width 0.2s ease;
 }
 
@@ -594,7 +623,7 @@
 .mobile-menu-btn {
   width: 100%;
   padding: 14px 24px;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -605,9 +634,9 @@
 }
 
 .mobile-menu-btn:hover {
-  background: #333;
+  background: var(--primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(40, 75, 99, 0.2);
 }
 
 .mobile-user-info {
@@ -620,7 +649,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -636,13 +665,13 @@
 .mobile-user-name {
   font-size: 16px;
   font-weight: 600;
-  color: #121212;
+  color: var(--text-dark);
   margin: 0;
 }
 
 .mobile-user-email {
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
@@ -702,10 +731,18 @@
 
 /* ===== DEAL TAB IMAGE HOVER ===== */
 .deal-tab-link {
+  border: 2px solid transparent;
   transition: all 0.3s ease, transform 0.2s ease !important;
 }
+
 .deal-tab-link:hover {
+  border-color: var(--primary);
   transform: translateY(-2px);
+}
+
+.deal-tab-link.w--current {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(40, 75, 99, 0.15);
 }
 .deal-tab-image {
   transition: transform 0.4s ease !important;
@@ -716,27 +753,32 @@
 
 /* ===== DEAL LEFT BOX FLOAT ===== */
 .deal-price {
+  color: var(--text-dark);
   transition: transform 0.3s ease;
   display: inline-block;
+  font-weight: 700;
 }
+
 .deal-left-box:hover .deal-price {
   transform: scale(1.05);
 }
 
-/* ===== SUBSCRIBE BUTTON ===== */
-.subscribe-button {
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-.subscribe-button:hover {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important;
+.deal-discount {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-weight: 500;
 }
 
-/* ===== CTA SECTION ===== */
-.cta-content-box h2 {
-  transition: letter-spacing 0.4s ease;
+/* ===== SUBSCRIBE BUTTON ===== */
+.subscribe-button {
+  background: var(--primary) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
 }
-.cta-content-box:hover h2 {
-  letter-spacing: 2px;
+
+.subscribe-button:hover {
+  background: var(--primary-dark) !important;
+  box-shadow: 0 6px 20px rgba(40, 75, 99, 0.25) !important;
+  transform: translateY(-2px);
 }
 
 /* ===== CHAT BOX ===== */
@@ -747,12 +789,15 @@
   z-index: 9999;
 }
 .chat-button {
+  background: var(--primary) !important;
   transition: transform 0.3s ease, box-shadow 0.3s ease !important;
   animation: chatBounce 3s ease-in-out infinite;
 }
+
 .chat-button:hover {
+  background: var(--primary-dark) !important;
   transform: scale(1.08) !important;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 8px 30px rgba(40, 75, 99, 0.3) !important;
   animation: none !important;
 }
 .chat-wrapper-animated {
@@ -772,7 +817,16 @@
 
 /* ===== SECTION TITLE REVEAL ===== */
 .section-title {
+  color: var(--text-dark);
   transition: color 0.3s ease;
+}
+
+.section-text {
+  color: var(--text-medium);
+}
+
+.section-text.light {
+  color: var(--text-light);
 }
 
 /* ===== ABOUT SECTION TEXT ===== */
@@ -1537,7 +1591,7 @@ html {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #121212 0%, #333 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: #fff;
   display: flex;
   align-items: center;
@@ -1552,14 +1606,14 @@ html {
 
 .user-avatar:hover {
   transform: scale(1.08);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 24px rgba(40, 75, 99, 0.2);
   border-color: rgba(255,255,255,0.3);
 }
 
 /* Filled input styling - grey to black when has value */
 .form-group input.filled,
 .form-group textarea.filled {
-  border-color: #121212;
+  border-color: var(--primary);
   background: #fff;
 }
 
@@ -1580,18 +1634,18 @@ html {
 }
 
 .profile-form .submit-btn.active {
-  background: #121212;
-  border-color: #121212;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
   opacity: 1;
   pointer-events: auto;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(40, 75, 99, 0.2);
 }
 
 .user-info .user-name {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   margin: 0 0 4px 0;
 }
 
@@ -1627,19 +1681,19 @@ html {
 .nav-item:hover {
   background: var(--input-bg, #f5f5f5);
   border-color: var(--border, #e5e5e5);
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   transform: translateX(4px);
 }
 
 .nav-item.active {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .nav-item.active:hover {
   transform: translateX(0);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(40, 75, 99, 0.2);
 }
 
 .sign-out-btn {
@@ -1673,8 +1727,8 @@ html {
   padding: 14px 16px;
   margin-top: 12px;
   border-radius: 12px;
-  border: 2px solid #121212;
-  background: #121212;
+  border: 2px solid var(--primary);
+  background: var(--primary);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
@@ -1686,7 +1740,7 @@ html {
 
 .edit-profile-btn:hover {
   background: transparent;
-  color: #121212;
+  color: var(--primary);
   transform: translateX(4px);
 }
 
@@ -2041,18 +2095,18 @@ html {
 }
 
 .track-link {
-  color: #121212;
+  color: var(--primary);
   font-weight: 500;
   font-size: 14px;
   text-decoration: none;
   padding: 8px 16px;
-  border: 2px solid #121212;
+  border: 2px solid var(--primary);
   border-radius: 8px;
   transition: all 0.3s ease;
 }
 
 .track-link:hover {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
 }
 
@@ -2224,16 +2278,16 @@ html {
 }
 
 .progress-step.completed .step-icon {
-  background: #121212;
-  border-color: #121212;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
 .progress-step.active .step-icon {
   background: #fff;
-  border-color: #121212;
-  color: #121212;
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(40, 75, 99, 0.1);
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -2271,17 +2325,17 @@ html {
 }
 
 .tracking-section:hover {
-  border-color: #121212;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(40, 75, 99, 0.08);
 }
 
 .tracking-section h3 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-h, #121212);
+  color: var(--text-dark);
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border, #e5e5e5);
+  border-bottom: 1px solid var(--border-color);
 }
 
 /* Tracking Items */
@@ -2303,7 +2357,7 @@ html {
 }
 
 .tracking-item:hover {
-  border-color: #121212;
+  border-color: var(--primary);
   transform: translateX(4px);
 }
 
@@ -2348,7 +2402,7 @@ html {
 }
 
 .address-card:hover {
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .address-card .address-name {
@@ -2414,8 +2468,8 @@ html {
 }
 
 .secondary-button:hover {
-  border-color: #121212;
-  background: #121212;
+  border-color: var(--primary);
+  background: var(--primary);
   color: #fff;
 }
 
@@ -2526,7 +2580,7 @@ html {
 
 .dropdown-header {
   padding: 20px;
-  background: linear-gradient(135deg, #121212 0%, #333 100%);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
   color: #fff;
 }
 
@@ -2569,8 +2623,8 @@ html {
 }
 
 .dropdown-link:hover {
-  background: var(--input-bg, #f5f5f5);
-  color: #121212;
+  background: var(--bg-secondary);
+  color: var(--primary);
   transform: translateX(4px);
 }
 
@@ -2640,7 +2694,7 @@ html {
 
 /* ===== CATEGORY SECTION STYLES ===== */
 .category-title {
-  color: #000000 !important;
+  color: var(--text-dark) !important;
   font-weight: 900;
 }
 
@@ -2775,7 +2829,7 @@ html {
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
-    color: #000 !important;
+    color: var(--primary) !important;
     font-size: 14px !important;
     font-weight: 500 !important;
     text-decoration: none !important;
@@ -2827,7 +2881,7 @@ html {
     display: flex !important;
     flex-direction: column !important;
     height: 420px !important;
-    background: #fff !important;
+    background: var(--bg-card) !important;
     border-radius: 16px !important;
     overflow: hidden !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
@@ -2877,7 +2931,7 @@ html {
   /* Description - single line, stays in bounds */
   .product-section .product-text {
     font-size: 12px !important;
-    color: #666 !important;
+    color: var(--text-medium) !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -2896,11 +2950,12 @@ html {
   .product-section .product-price {
     font-size: 15px !important;
     font-weight: 700 !important;
+    color: var(--text-dark) !important;
   }
   
   .product-section .product-discount {
     font-size: 13px !important;
-    color: #999 !important;
+    color: var(--text-muted) !important;
     text-decoration: line-through !important;
   }
   
@@ -3160,7 +3215,7 @@ html {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #121212;
+  accent-color: var(--primary);
 }
 
 /* Price Range Slider */
@@ -3176,7 +3231,7 @@ html {
   flex: 1;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, #121212 0%, #121212 var(--value, 100%), #e5e5e5 var(--value, 100%), #e5e5e5 100%);
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--value, 100%), #e5e5e5 var(--value, 100%), #e5e5e5 100%);
   outline: none;
   -webkit-appearance: none;
   appearance: none;
@@ -3188,7 +3243,7 @@ html {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #121212;
+  background: var(--primary);
   cursor: pointer;
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
@@ -3198,7 +3253,7 @@ html {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #121212;
+  background: var(--primary);
   cursor: pointer;
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
@@ -3217,7 +3272,7 @@ html {
 }
 
 .clear-filters:hover {
-  border-color: #121212;
+  border-color: var(--primary);
   background: var(--input-bg, #f5f5f5);
 }
 
@@ -3401,7 +3456,7 @@ html {
 .product-price {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .product-original-price {
@@ -3414,9 +3469,9 @@ html {
   width: 100%;
   padding: 14px 20px;
   margin-top: 12px;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
-  border: 2px solid #121212;
+  border: 2px solid var(--primary);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
@@ -3426,7 +3481,7 @@ html {
 
 .add-to-cart-btn:hover {
   background: transparent;
-  color: #121212;
+  color: var(--primary);
 }
 
 /* ===== CART SIDEBAR STYLES ===== */
@@ -3524,13 +3579,13 @@ html {
 .cart-product-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .cart-price {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   margin: 4px 0;
 }
 
@@ -3579,7 +3634,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .qty-btn:hover {
@@ -3624,20 +3679,20 @@ html {
 .cart-product-text {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .cart-total-price {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .checkout-button {
   display: block;
   width: 100%;
   padding: 16px 24px;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   text-align: center;
   font-size: 14px;
@@ -3650,7 +3705,7 @@ html {
 }
 
 .checkout-button:hover {
-  background: #333;
+  background: var(--primary-dark, #153243);
   transform: translateY(-2px);
 }
 
@@ -3758,6 +3813,7 @@ html {
 .product-btn.buy-now:hover {
   background: #333;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 75, 99, 0.2);
 }
 
 .product-btn.add-to-cart {
@@ -3824,7 +3880,7 @@ html {
 .size-modal-info p {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   margin: 0;
 }
 
@@ -3856,12 +3912,12 @@ html {
 }
 
 .size-option:hover {
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .size-option.selected {
-  border-color: #121212;
-  background: #121212;
+  border-color: var(--primary);
+  background: var(--primary);
   color: #fff;
 }
 
@@ -3883,21 +3939,21 @@ html {
 .size-modal-cancel {
   background: transparent;
   border: 2px solid var(--border, #e5e5e5);
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .size-modal-cancel:hover {
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .size-modal-add {
-  background: #121212;
-  border: 2px solid #121212;
+  background: var(--primary);
+  border: 2px solid var(--primary);
   color: #fff;
 }
 
 .size-modal-add:hover {
-  background: #333;
+  background: var(--primary-dark, #153243);
 }
 
 .size-modal-add:disabled {
@@ -5161,7 +5217,7 @@ html {
 }
 
 .order-item:hover {
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .order-item img {
@@ -5182,7 +5238,7 @@ html {
 .order-item-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   margin: 0;
   line-height: 1.3;
 }
@@ -5196,7 +5252,7 @@ html {
 .order-item-price {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .order-totals {
@@ -5216,7 +5272,7 @@ html {
 .order-row.total {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   padding-top: 16px;
   border-top: 2px solid var(--border, #e5e5e5);
   margin-top: 4px;
@@ -5224,7 +5280,7 @@ html {
 
 .order-row.total span:last-child {
   font-size: 20px;
-  color: #121212;
+  color: var(--primary);
 }
 
 /* Continue to Payment Button in Order Summary */
@@ -5232,9 +5288,9 @@ html {
   width: 100%;
   margin-top: 20px;
   padding: 16px 24px;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
-  border: 2px solid #121212;
+  border: 2px solid var(--primary);
   border-radius: 12px;
   font-size: 15px;
   font-weight: 700;
@@ -5250,7 +5306,7 @@ html {
 
 .checkout-continue-btn:hover {
   background: transparent;
-  color: #121212;
+  color: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
@@ -5281,23 +5337,23 @@ html {
 .checkout-actions .secondary-button {
   background: transparent;
   border: 2px solid var(--border, #e5e5e5);
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .checkout-actions .secondary-button:hover {
-  border-color: #121212;
+  border-color: var(--primary);
   background: var(--input-bg, #f5f5f5);
 }
 
 .checkout-actions .primary-button {
-  background: #121212;
-  border: 2px solid #121212;
+  background: var(--primary);
+  border: 2px solid var(--primary);
   color: #fff;
 }
 
 .checkout-actions .primary-button:hover:not(:disabled) {
   background: transparent;
-  color: #121212;
+  color: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
@@ -5328,18 +5384,18 @@ html {
 }
 
 .payment-method:hover {
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .payment-method.selected {
-  border-color: #121212;
+  border-color: var(--primary);
   background: #fff;
 }
 
 .payment-method input[type="radio"] {
   width: 20px;
   height: 20px;
-  accent-color: #121212;
+  accent-color: var(--primary);
   cursor: pointer;
 }
 
@@ -6043,9 +6099,9 @@ section {
   min-width: 48px;
   min-height: 48px;
   border-radius: 50%;
-  border: 2px solid #121212;
+  border: 2px solid var(--primary);
   background: #fff;
-  color: #121212;
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6057,7 +6113,7 @@ section {
 }
 
 .carousel-arrow:hover:not(:disabled) {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   transform: scale(1.05);
 }
@@ -6232,7 +6288,7 @@ html body #root #Product-Section .section-title-box .section-text {
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #121212;
+  color: var(--text-dark, #153243);
 }
 
 #Product-Section .product-text {
@@ -6253,7 +6309,7 @@ html body #root #Product-Section .section-title-box .section-text {
 #Product-Section .product-price {
   font-size: 18px;
   font-weight: 700;
-  color: #121212;
+  color: var(--text-dark, #153243);
   margin: 0;
 }
 
@@ -6303,7 +6359,7 @@ html body #root #Product-Section .section-title-box .section-text {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -6325,7 +6381,7 @@ html body #root #Product-Section .section-title-box .section-text {
   top: 50%;
   transform: translateY(-50%);
   background: #fff;
-  color: #121212;
+  color: var(--text-dark, #153243);
   padding: 10px 16px;
   border-radius: 12px;
   font-size: 14px;
@@ -6362,7 +6418,7 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .chat-header {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   padding: 16px 20px;
   display: flex;
@@ -6454,14 +6510,14 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .message.user .message-content {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .message.assistant .message-content {
   background: #f5f5f5;
-  color: #121212;
+  color: var(--text-dark, #153243);
   border-bottom-left-radius: 4px;
 }
 
@@ -6525,7 +6581,7 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .quick-reply-btn:hover {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
 }
 
@@ -6546,14 +6602,14 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .chat-input-wrapper input:focus {
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .send-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #121212;
+  background: var(--primary);
   color: #fff;
   border: none;
   display: flex;
@@ -6564,7 +6620,7 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .send-btn:hover:not(:disabled) {
-  background: #333;
+  background: var(--primary-dark, #153243);
   transform: scale(1.05);
 }
 
@@ -6690,13 +6746,13 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .status-step.active .status-icon {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
-  box-shadow: 0 0 0 4px rgba(18, 18, 18, 0.15);
+  box-shadow: 0 0 0 4px rgba(40, 75, 99, 0.15);
 }
 
 .status-step.active span {
-  color: #121212;
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -6721,7 +6777,7 @@ html body #root #Product-Section .section-title-box .section-text {
   margin: 0 0 20px 0;
   padding-bottom: 16px;
   border-bottom: 2px solid var(--border, #e5e5e5);
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 /* Order Items */
@@ -6761,7 +6817,7 @@ html body #root #Product-Section .section-title-box .section-text {
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 6px 0;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .confirmation-item .item-meta {
@@ -6773,7 +6829,7 @@ html body #root #Product-Section .section-title-box .section-text {
 .confirmation-item .item-price {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 /* Address Card */
@@ -6793,7 +6849,7 @@ html body #root #Product-Section .section-title-box .section-text {
 .address-card .address-name {
   font-size: 17px;
   font-weight: 700;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
   margin-bottom: 12px;
 }
 
@@ -6858,23 +6914,23 @@ html body #root #Product-Section .section-title-box .section-text {
 }
 
 .confirmation-actions .primary-button {
-  background: #121212;
+  background: var(--primary);
   color: #fff;
 }
 
 .confirmation-actions .primary-button:hover {
-  background: #333;
+  background: var(--primary-dark, #153243);
   transform: translateY(-2px);
 }
 
 .confirmation-actions .secondary-button {
   background: #fff;
-  color: #121212;
+  color: var(--text-dark, #153243);
   border: 2px solid #e5e5e5;
 }
 
 .confirmation-actions .secondary-button:hover {
-  border-color: #121212;
+  border-color: var(--primary);
   transform: translateY(-2px);
 }
 
@@ -6966,7 +7022,7 @@ html body #root #Product-Section .section-title-box .section-text {
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-h, #121212);
+  color: var(--text-dark, #153243);
 }
 
 .checkout-form input,
@@ -6985,7 +7041,7 @@ html body #root #Product-Section .section-title-box .section-text {
 .checkout-form select:focus,
 .checkout-form textarea:focus {
   outline: none;
-  border-color: #121212;
+  border-color: var(--primary);
 }
 
 .checkout-form textarea {

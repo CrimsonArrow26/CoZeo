@@ -58,7 +58,71 @@ async function supabaseFetch(table: string, options?: {
   return options?.single ? data[0] : data;
 }
 
-// Query keys
+// Helper to calculate remaining stock for a list of products
+async function calculateStockForProducts(products: (Product & { id: string; stock?: number })[]): Promise<Product[]> {
+  if (!products.length) return products;
+  
+  // Fetch all order items for these products
+  const productIds = products.map(p => p.id);
+  const { data: orderItems, error } = await supabase
+    .from('order_items')
+    .select('product_id, quantity')
+    .in('product_id', productIds);
+  
+  if (error) {
+    console.error('Error fetching order items:', error);
+  }
+  
+  // Calculate ordered quantities per product
+  const orderedQuantities: Record<string, number> = {};
+  if (orderItems) {
+    orderItems.forEach((item: { product_id: string; quantity: number }) => {
+      orderedQuantities[item.product_id] = (orderedQuantities[item.product_id] || 0) + (item.quantity || 0);
+    });
+  }
+  
+  // Calculate remaining stock for each product
+  return products.map(product => {
+    const totalStock = product.stock || 0;
+    const ordered = orderedQuantities[product.id] || 0;
+    const remainingStock = Math.max(0, totalStock - ordered);
+    
+    return {
+      ...product,
+      stock: remainingStock,
+      total_stock: totalStock,
+      ordered_quantity: ordered
+    } as Product;
+  });
+}
+
+// Helper to fetch products with calculated stock
+async function fetchProductsWithStock(filters?: { category?: string; badge?: string }) {
+  // Fetch products
+  const { data: products, error: productsError } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  
+  if (productsError) throw productsError;
+  if (!products) return [];
+  
+  // Calculate stock for all products
+  const productsWithStock = await calculateStockForProducts(products);
+  
+  // Apply filters
+  let filtered = productsWithStock;
+  if (filters?.category) {
+    filtered = filtered.filter((p: Product) => p.category === filters.category);
+  }
+  if (filters?.badge) {
+    filtered = filtered.filter((p: Product) => p.badge === filters.badge);
+  }
+  
+  return filtered;
+}
+
 export const productKeys = {
   all: ['products'] as const,
   lists: () => [...productKeys.all, 'list'] as const,
@@ -70,31 +134,43 @@ export const productKeys = {
   newDrops: () => [...productKeys.all, 'newDrops'] as const,
 };
 
-// Fetch all products
+// Fetch all products with calculated stock
 export function useProducts(filters?: { category?: string; badge?: string; minPrice?: number; maxPrice?: number }) {
   return useQuery({
     queryKey: productKeys.list(filters || {}),
     queryFn: async () => {
-      console.log('Fetching products with filters:', filters);
+      console.log('Fetching products with calculated stock:', filters);
       try {
-        const filtersObj: Record<string, string> = {};
+        // Fetch products
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+        
+        if (productsError) throw productsError;
+        if (!products) return [];
+        
+        // Calculate stock for all products
+        const productsWithStock = await calculateStockForProducts(products);
+        
+        // Apply filters
+        let filtered = productsWithStock;
         if (filters?.category) {
-          filtersObj.category = filters.category;
+          filtered = filtered.filter((p: Product) => p.category === filters.category);
         }
         if (filters?.badge) {
-          filtersObj.badge = filters.badge;
+          filtered = filtered.filter((p: Product) => p.badge === filters.badge);
         }
-        // Only show active products on storefront
-        filtersObj.is_active = 'true';
+        if (filters?.minPrice !== undefined) {
+          filtered = filtered.filter((p: Product) => (p.discount_price || p.price) >= filters.minPrice!);
+        }
+        if (filters?.maxPrice !== undefined) {
+          filtered = filtered.filter((p: Product) => (p.discount_price || p.price) <= filters.maxPrice!);
+        }
         
-        const data = await supabaseFetch('products', {
-          select: '*,id',
-          filters: filtersObj,
-          order: { column: 'created_at', ascending: false }
-        });
-        
-        console.log('Products fetch result:', { count: data?.length });
-        return data as Product[];
+        console.log('Products fetch result:', { count: filtered?.length });
+        return filtered as Product[];
       } catch (err) {
         console.error('Products fetch failed:', err);
         throw err;
@@ -107,21 +183,45 @@ export function useProducts(filters?: { category?: string; badge?: string; minPr
   });
 }
 
-// Fetch single product by slug
+// Fetch single product by slug with calculated stock
 export function useProduct(slug: string) {
   return useQuery({
     queryKey: productKeys.detail(slug),
     queryFn: async () => {
       try {
-        const data = await supabaseFetch('products', {
-          select: '*,id',
-          filters: { slug },
-          single: true
-        });
-        if (!data) {
+        // Fetch the product
+        const { data: product, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('slug', slug)
+          .single();
+        
+        if (error) throw error;
+        if (!product) {
           throw new Error('Product not found');
         }
-        return data as Product;
+        
+        // Fetch order items for this product
+        const { data: orderItems, error: orderError } = await supabase
+          .from('order_items')
+          .select('quantity')
+          .eq('product_id', product.id);
+        
+        if (orderError) {
+          console.error('Error fetching order items:', orderError);
+        }
+        
+        // Calculate ordered quantity
+        const orderedQuantity = orderItems?.reduce((sum: number, item: { quantity: number }) => sum + (item.quantity || 0), 0) || 0;
+        const totalStock = product.stock || 0;
+        const remainingStock = Math.max(0, totalStock - orderedQuantity);
+        
+        return {
+          ...product,
+          stock: remainingStock,
+          total_stock: totalStock,
+          ordered_quantity: orderedQuantity
+        } as Product;
       } catch (err) {
         throw err;
       }
@@ -134,7 +234,7 @@ export function useProduct(slug: string) {
   });
 }
 
-// Fetch featured products
+// Fetch featured products with calculated stock
 export function useFeaturedProducts() {
   return useQuery({
     queryKey: productKeys.featured(),
@@ -147,12 +247,12 @@ export function useFeaturedProducts() {
         .order('created_at', { ascending: false })
         .limit(6);
       if (error) throw error;
-      return data as Product[];
+      return calculateStockForProducts(data || []);
     },
   });
 }
 
-// Fetch spotlight product
+// Fetch spotlight product with calculated stock
 export function useSpotlightProduct() {
   return useQuery({
     queryKey: productKeys.spotlight(),
@@ -165,12 +265,14 @@ export function useSpotlightProduct() {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data as Product | null;
+      if (!data) return null;
+      const productsWithStock = await calculateStockForProducts([data]);
+      return productsWithStock[0] as Product | null;
     },
   });
 }
 
-// Fetch new drops (latest 3 products)
+// Fetch new drops (latest 3 products) with calculated stock
 export function useNewDrops() {
   return useQuery({
     queryKey: productKeys.newDrops(),
@@ -182,7 +284,7 @@ export function useNewDrops() {
         .order('created_at', { ascending: false })
         .limit(3);
       if (error) throw error;
-      return data as Product[];
+      return calculateStockForProducts(data || []);
     },
   });
 }

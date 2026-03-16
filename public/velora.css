@@ -2197,7 +2197,7 @@ textarea.w-select {
     --_line-height---xlarge: 160%;
     --_font-weight---regular: 400;
     --_font-family---title-font: "Big Shoulders", sans-serif;
-    --dark: #121212;
+    --dark: #284B63;
     --_font-size---h1: 100px;
     --_line-height---small: 110%;
     --_font-weight---bold: 700;
@@ -3732,7 +3732,7 @@ a {
 }
 
 .header-top {
-    background-color: var(--secondary-color\<deleted\|variable-094d8b23-857c-f76d-4e22-b4d5c68ba106\>);
+    background-color: var(--primary);
     text-align: center;
     padding-top: 12px;
     padding-bottom: 12px;
@@ -4048,7 +4048,7 @@ a {
 }
 
 .main-footer {
-    background-color: #141414;
+    background-color: var(--primary);
     position: relative
 }
 
@@ -4159,7 +4159,7 @@ a {
 }
 
 .section-text {
-    color: var(--gray-five\<deleted\|variable-397eeaa1-dfcf-f210-7ac9-ac2d88e587af\>);
+    color: var(--gray-five);
     margin-top: 12px;
     margin-bottom: 0
 }
@@ -4331,7 +4331,7 @@ a {
 }
 
 .subscribe-text {
-    color: var(--gray-six\<deleted\|variable-63d1b407-e58d-c859-15f8-bf9dc01ab9b0\>);
+    color: var(--gray-six);
     font-size: var(--_font-size---xsmall-paragraph);
     margin-top: 10px;
     margin-bottom: 0
@@ -5863,6 +5863,7 @@ a {
 }
 
 .about-title {
+    color: var(--dark);
     font-size: var(--_font-size---h1);
     line-height: var(--_line-height---xsmall);
     text-transform: uppercase;
@@ -5870,6 +5871,7 @@ a {
 }
 
 .about-text {
+    color: var(--text-color);
     margin-bottom: 25px
 }
 
