@@ -3,6 +3,88 @@ import { Link } from 'react-router-dom';
 import { useFeaturedProducts } from '../hooks/useProducts';
 import { formatPrice } from '../lib/utils';
 
+function FeaturedCard({ product, index, cardWidth, gap }) {
+  const ref = useRef();
+  const direction = index % 2 === 0 ? 'left' : 'right';
+  
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.add(`reveal-${direction}`);
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => el.classList.add('visible'), index * 100);
+        observer.unobserve(el);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [direction, index]);
+
+  return (
+    <Link
+      ref={ref}
+      to={`/product/${product.slug}`}
+      key={product.id}
+      style={{
+        flexShrink: 0,
+        width: cardWidth - gap,
+        borderRadius: 24,
+        overflow: 'hidden',
+        position: 'relative',
+        cursor: 'pointer',
+      }}
+      className="featured-card-hover"
+    >
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24 }}>
+        <img
+          src={product.images?.[0] || '/images/placeholder.jpg'}
+          alt={product.name}
+          loading="lazy"
+          style={{
+            width: '100%', height: 700, objectFit: 'cover', display: 'block',
+            transition: 'transform 0.6s ease',
+          }}
+          className="featured-card-img"
+        />
+        {/* gradient overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)',
+          borderRadius: 24,
+        }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '28px 30px' }}>
+          {product.stock === 0 && (
+            <span style={{
+              display: 'inline-block',
+              background: 'rgba(231, 76, 60, 0.9)',
+              color: '#fff',
+              padding: '4px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              borderRadius: 4,
+              marginBottom: 12,
+              textTransform: 'uppercase',
+            }}>Out of Stock</span>
+          )}
+          <h3 style={{
+            fontFamily: '"Big Shoulders", sans-serif', color: '#fff',
+            fontSize: 28, fontWeight: 800, textTransform: 'uppercase', margin: '0 0 8px',
+            transform: 'translateY(0)', transition: 'transform 0.35s ease',
+          }} className="featured-card-title">{product.name}</h3>
+          <p style={{
+            color: 'rgba(255,255,255,0.85)', fontSize: 14, margin: 0, lineHeight: 1.6,
+            maxWidth: 320,
+          }}>{product.description}</p>
+          <p style={{
+            color: '#fff', fontSize: 18, marginTop: 12, fontWeight: 600,
+          }}>{formatPrice(product.discount_price || product.price)}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function FeaturedSection() {
   const [offset, setOffset] = useState(0);
   const trackRef = useRef();
@@ -106,65 +188,13 @@ export default function FeaturedSection() {
           }}
         >
           {featuredProducts?.map((product, i) => (
-            <Link
-              to={`/product/${product.slug}`}
-              key={product.id}
-              style={{
-                flexShrink: 0,
-                width: cardWidth - gap,
-                borderRadius: 24,
-                overflow: 'hidden',
-                position: 'relative',
-                cursor: 'pointer',
-              }}
-              className="featured-card-hover"
-            >
-              <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24 }}>
-                <img
-                  src={product.images?.[0] || '/images/placeholder.jpg'}
-                  alt={product.name}
-                  loading="lazy"
-                  style={{
-                    width: '100%', height: 700, objectFit: 'cover', display: 'block',
-                    transition: 'transform 0.6s ease',
-                  }}
-                  className="featured-card-img"
-                />
-                {/* gradient overlay */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)',
-                  borderRadius: 24,
-                }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '28px 30px' }}>
-                  {product.stock === 0 && (
-                    <span style={{
-                      display: 'inline-block',
-                      background: 'rgba(231, 76, 60, 0.9)',
-                      color: '#fff',
-                      padding: '4px 12px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      borderRadius: 4,
-                      marginBottom: 12,
-                      textTransform: 'uppercase',
-                    }}>Out of Stock</span>
-                  )}
-                  <h3 style={{
-                    fontFamily: '"Big Shoulders", sans-serif', color: '#fff',
-                    fontSize: 28, fontWeight: 800, textTransform: 'uppercase', margin: '0 0 8px',
-                    transform: 'translateY(0)', transition: 'transform 0.35s ease',
-                  }} className="featured-card-title">{product.name}</h3>
-                  <p style={{
-                    color: 'rgba(255,255,255,0.85)', fontSize: 14, margin: 0, lineHeight: 1.6,
-                    maxWidth: 320,
-                  }}>{product.description}</p>
-                  <p style={{
-                    color: '#fff', fontSize: 18, marginTop: 12, fontWeight: 600,
-                  }}>{formatPrice(product.discount_price || product.price)}</p>
-                </div>
-              </div>
-            </Link>
+            <FeaturedCard 
+              key={product.id} 
+              product={product} 
+              index={i} 
+              cardWidth={cardWidth} 
+              gap={gap} 
+            />
           ))}
         </div>
       </div>
