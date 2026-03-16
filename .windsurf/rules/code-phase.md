@@ -15,3 +15,5 @@ and While developing complete one phase at a time then stop and tell user what c
 The base website should be of Velora and the build plan should be integrated into it without altering ui and fonts.
 
 The Velora already has Auth pages, just connect the authentication to it.
+
+All the changes made will be for mobile viewports not desktops.

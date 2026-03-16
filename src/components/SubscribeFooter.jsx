@@ -65,10 +65,7 @@ export function SubscribeSection() {
 }
 
 const socialLinks = [
-  { icon: '/images/svgviewer-output-2.svg', label: 'Linkedin', url: 'https://linkedin.com/company/cozeo' },
-  { icon: '/images/svgviewer-output-20-1--1.svg', label: 'Instagram', url: 'https://instagram.com/cozeo' },
-  { icon: '/images/svgviewer-output-20-2--1.svg', label: 'Twitter', url: 'https://twitter.com/cozeo' },
-  { icon: '/images/svgviewer-output-20-3--1.svg', label: 'Facebook', url: 'https://facebook.com/cozeo' },
+  { icon: '/images/svgviewer-output-20-1--1.svg', label: 'Instagram', url: 'https://www.instagram.com/cozeowear.shop' },
 ];
 
 export function Footer() {
@@ -155,7 +152,7 @@ export function Footer() {
         <div className="w-layout-blockcontainer container w-container">
           <p className="footer-copyright">
             © Copyright <span className="footer-copyright-text">CoZeo</span>
-            {' '}| Design by <a href="https://www.linkedin.com/in/prathamesh-yewale/" target="_blank" rel="noopener noreferrer" className="footer-copyright-text" style={{ textDecoration: 'none' }}>Prathamesh Yewale</a>
+            {' '}| Design by <a href="https://www.linkedin.com/in/prathamesh-yewale/" target="_blank" rel="noopener noreferrer" className="footer-copyright-text" style={{ textDecoration: 'none', color: '#fff' }}>Prathamesh Yewale</a>
           </p>
         </div>
       </div>

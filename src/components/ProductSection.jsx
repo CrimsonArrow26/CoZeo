@@ -55,6 +55,15 @@ export default function ProductSection() {
           <h2 className="section-title">new drops</h2>
           <p className="section-text">Stand out with our latest collection—bold designs, premium fabrics, and street-ready fits. Once they're gone, they're gone. Don't miss out!</p>
         </div>
+        <div className="view-all-bar">
+          <Link to="/shop" className="view-all-link">
+            <span>View all</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
         <div className="product-carousel-wrapper" style={{ display: 'block' }}>
           <div className="w-dyn-list" ref={carouselRef} style={{ overflowX: 'auto' }}>
             {isLoading ? (
