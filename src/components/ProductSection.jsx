@@ -29,6 +29,11 @@ function ProductCard({ product, index }) {
         <div className="product-image-box">
           <img loading="lazy" src={product.images?.[0] || '/images/placeholder.jpg'} alt={product.name} className="product-image" />
           {product.badge && <p className={`product-tag ${product.badge}`}>{product.badge}</p>}
+          {product.stock === 0 && (
+            <div className="product-out-of-stock-overlay">
+              <span className="out-of-stock-badge">Out of Stock</span>
+            </div>
+          )}
         </div>
         <div className="product-content-box">
           <h3 className="product-title">{product.name}</h3>

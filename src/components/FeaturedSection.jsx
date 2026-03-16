@@ -137,6 +137,19 @@ export default function FeaturedSection() {
                   borderRadius: 24,
                 }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '28px 30px' }}>
+                  {product.stock === 0 && (
+                    <span style={{
+                      display: 'inline-block',
+                      background: 'rgba(231, 76, 60, 0.9)',
+                      color: '#fff',
+                      padding: '4px 12px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      borderRadius: 4,
+                      marginBottom: 12,
+                      textTransform: 'uppercase',
+                    }}>Out of Stock</span>
+                  )}
                   <h3 style={{
                     fontFamily: '"Big Shoulders", sans-serif', color: '#fff',
                     fontSize: 28, fontWeight: 800, textTransform: 'uppercase', margin: '0 0 8px',

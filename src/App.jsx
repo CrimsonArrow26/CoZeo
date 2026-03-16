@@ -21,7 +21,12 @@ import AdminRoute from './components/AdminRoute';
 import { Toaster } from 'sonner';
 
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import InvoicePage from './pages/InvoicePage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import RefundPage from './pages/RefundPage';
+import ShippingPage from './pages/ShippingPage';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -47,9 +52,14 @@ function AppContent() {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/order-confirmation/:id" element={<OrderConfirmationPage />} />
       <Route path="/orders/:id/track" element={<OrderTrackingPage />} />
+      <Route path="/orders/:id/invoice" element={<InvoicePage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/giveaway" element={<GiveawayPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/refund" element={<RefundPage />} />
+      <Route path="/shipping" element={<ShippingPage />} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

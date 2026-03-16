@@ -168,6 +168,30 @@
   transform: scale(1.05);
 }
 
+/* ===== OUT OF STOCK OVERLAY ===== */
+.product-out-of-stock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}
+
+.out-of-stock-badge {
+  background: #e74c3c;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 /* ===== CATEGORY ANIMATIONS ===== */
 .category-block {
   overflow: hidden;

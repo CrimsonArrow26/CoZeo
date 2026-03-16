@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import { Footer } from '../components/SubscribeFooter';
 import { useOrder, useOrderItems } from '../hooks/useOrders';
 import { formatPrice, formatDateTime } from '../lib/utils';
-import { CheckCircle, Package, Truck, Home } from 'lucide-react';
+import { CheckCircle, Package, Truck, Home, Download } from 'lucide-react';
 
 export default function OrderConfirmationPage() {
   const { id } = useParams();
@@ -125,6 +125,14 @@ export default function OrderConfirmationPage() {
 
             {/* Actions */}
             <div className="confirmation-actions">
+              <Link 
+                to={`/orders/${order.id}/invoice`}
+                className="primary-button"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Download size={18} />
+                Download Invoice
+              </Link>
               <Link to={`/orders/${order.id}/track`} className="primary-button">
                 Track Order
               </Link>

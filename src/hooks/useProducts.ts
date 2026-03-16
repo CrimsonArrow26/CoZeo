@@ -84,10 +84,12 @@ export function useProducts(filters?: { category?: string; badge?: string; minPr
         if (filters?.badge) {
           filtersObj.badge = filters.badge;
         }
+        // Only show active products on storefront
+        filtersObj.is_active = 'true';
         
         const data = await supabaseFetch('products', {
           select: '*,id',
-          filters: Object.keys(filtersObj).length > 0 ? filtersObj : undefined,
+          filters: filtersObj,
           order: { column: 'created_at', ascending: false }
         });
         

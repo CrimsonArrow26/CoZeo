@@ -220,6 +220,11 @@ export default function ShopPage() {
                             {product.badge}
                           </span>
                         )}
+                        {product.stock === 0 && (
+                          <div className="product-out-of-stock-overlay">
+                            <span className="out-of-stock-badge">Out of Stock</span>
+                          </div>
+                        )}
                       </Link>
                       <div className="product-content">
                         <h3 className="product-title">{product.name}</h3>
@@ -237,8 +242,10 @@ export default function ShopPage() {
                         <button 
                           className="add-to-cart-btn"
                           onClick={() => setSizeModalProduct(product)}
+                          disabled={product.stock === 0}
+                          style={{ opacity: product.stock === 0 ? 0.5 : 1, cursor: product.stock === 0 ? 'not-allowed' : 'pointer' }}
                         >
-                          Add to Cart
+                          {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                         </button>
                       </div>
                     </div>

@@ -203,8 +203,6 @@ export function CartProvider({ children }) {
 
   // Update quantity
   const updateQty = async (id, size, qty) => {
-    if (qty < 1) return;
-    
     if (user?.id) {
       // Logged in user - update in database
       const cartItem = dbCartItems.find(
@@ -213,7 +211,13 @@ export function CartProvider({ children }) {
       if (cartItem) {
         setIsSyncing(true);
         try {
-          await updateCartItemDB(cartItem.id, qty);
+          if (qty < 1) {
+            // Remove item when quantity is 0
+            await removeCartItemDB(cartItem.id);
+          } else {
+            await updateCartItemDB(cartItem.id, qty);
+          }
+          // Reload cart from database after update
           await loadCart();
         } catch {
           // Silently fail
@@ -223,9 +227,14 @@ export function CartProvider({ children }) {
       }
     } else {
       // Guest user - update local state
-      setCartItems(prev => prev.map(i => 
-        i.id === id && i.size === size ? { ...i, qty: Math.min(qty, 10) } : i
-      ));
+      if (qty < 1) {
+        // Remove item when quantity is 0
+        setCartItems(prev => prev.filter(i => !(i.id === id && i.size === size)));
+      } else {
+        setCartItems(prev => prev.map(i => 
+          i.id === id && i.size === size ? { ...i, qty: Math.min(qty, 10) } : i
+        ));
+      }
     }
   };
 

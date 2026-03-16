@@ -174,3 +174,94 @@ export async function openRazorpayCheckout({
     onError(error as Error);
   }
 }
+
+// Razorpay invoice generation result type
+export interface RazorpayInvoiceResult {
+  success: boolean;
+  invoice_id?: string;
+  invoice_number?: string;
+  invoice_url?: string;
+  status?: string;
+  error?: string;
+}
+
+// Razorpay order item type
+export interface RazorpayInvoiceItem {
+  product_name: string;
+  unit_price: number;
+  quantity: number;
+  size: string;
+  color?: string;
+}
+
+// Razorpay shipping address type
+export interface RazorpayShippingAddress {
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
+// Create Razorpay invoice via Supabase Edge Function
+export async function createRazorpayInvoice(
+  orderId: string,
+  razorpayPaymentId: string,
+  customerEmail: string,
+  customerName: string,
+  customerPhone: string,
+  items: RazorpayInvoiceItem[],
+  subtotal: number,
+  discountAmount: number,
+  total: number,
+  shippingAddress: RazorpayShippingAddress
+): Promise<RazorpayInvoiceResult> {
+  console.log('[Razorpay Invoice] Starting createRazorpayInvoice...');
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rbjivulozgubrenzwcjx.supabase.co';
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/create-razorpay-invoice`;
+  console.log('[Razorpay Invoice] Edge Function URL:', edgeFunctionUrl);
+  console.log('[Razorpay Invoice] Invoice data:', { orderId, customerEmail, total, itemsCount: items.length });
+  
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({
+        orderId,
+        razorpayPaymentId,
+        customerEmail,
+        customerName,
+        customerPhone,
+        items,
+        subtotal,
+        discountAmount,
+        total,
+        shippingAddress,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Razorpay Invoice] Edge Function error:', response.status, errorText);
+      return { success: false, error: 'Failed to create invoice: ' + errorText };
+    }
+    
+    const data = await response.json();
+    console.log('[Razorpay Invoice] Invoice created successfully:', data);
+    
+    return {
+      success: true,
+      invoice_id: data.receipt_id,
+      invoice_number: data.receipt_id,
+      invoice_url: data.receipt_url,
+      status: data.status,
+    };
+  } catch (error) {
+    console.error('[Razorpay Invoice] Fetch error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

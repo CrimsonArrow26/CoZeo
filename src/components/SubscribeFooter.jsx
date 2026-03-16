@@ -111,7 +111,7 @@ export function Footer() {
                   ['/shop', 'Shop'],
                   ['/giveaway', 'Giveaway'],
                   ['/dashboard', 'My Account'],
-                  ['/orders/track', 'Track Order'],
+                  ['/dashboard', 'Track Order'],
                 ].map(([href, label], i, arr) => (
                   <Link key={i} to={href} className={`footer-list-link w-inline-block${i === arr.length-1 ? ' mb-zero' : ''}`}>
                     <p className="footer-list-text">{label}</p>

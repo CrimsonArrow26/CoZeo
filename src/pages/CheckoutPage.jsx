@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCreateOrder } from '../hooks/useOrders';
 import { useValidateCoupon } from '../hooks/useCoupons';
 import { formatPrice } from '../lib/utils';
-import { openRazorpayCheckout } from '../lib/razorpay';
+import { openRazorpayCheckout, createRazorpayInvoice } from '../lib/razorpay';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -30,6 +30,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: profile?.name || '',
+    email: user?.email || '',
     phone: profile?.phone || '',
     address: profile?.address || '',
     city: profile?.city || '',
@@ -88,6 +89,7 @@ export default function CheckoutPage() {
           .from('profiles')
           .update({
             name: formData.name,
+            email: formData.email,
             phone: formData.phone,
             address: formData.address,
             city: formData.city,
@@ -169,6 +171,54 @@ export default function CheckoutPage() {
             } else {
               console.log('Order status updated to paid');
               toast.success('Payment successful!');
+              
+              // Generate Razorpay Invoice after successful payment
+              try {
+                console.log('[Invoice] Starting invoice generation...');
+                const invoiceResult = await createRazorpayInvoice(
+                  order.id,
+                  paymentId,
+                  user.email || '',
+                  profile?.name || formData.name || '',
+                  formData.phone || '',
+                  orderItems.map(item => ({
+                    product_name: item.product_name,
+                    unit_price: item.unit_price,
+                    quantity: item.quantity,
+                    size: item.size,
+                    color: item.color,
+                  })),
+                  subtotal,
+                  discountAmount,
+                  finalTotal,
+                  {
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    pincode: formData.pincode,
+                  }
+                );
+                
+                if (invoiceResult.success) {
+                  console.log('[Invoice] Invoice generated successfully:', invoiceResult);
+                  // Store invoice details in the order
+                  await supabase
+                    .from('orders')
+                    .update({
+                      razorpay_invoice_id: invoiceResult.invoice_id,
+                      razorpay_invoice_number: invoiceResult.invoice_number,
+                      razorpay_invoice_url: invoiceResult.invoice_url,
+                    })
+                    .eq('id', order.id);
+                  toast.success('Invoice generated successfully!');
+                } else {
+                  console.error('[Invoice] Failed to generate invoice:', invoiceResult.error);
+                  // Don't block the flow if invoice generation fails
+                }
+              } catch (invoiceError) {
+                console.error('[Invoice] Error generating invoice:', invoiceError);
+                // Don't block the flow if invoice generation fails
+              }
               
               // Save shipping address to profile for future orders
               await saveShippingAddressToProfile();
@@ -312,12 +362,24 @@ export default function CheckoutPage() {
                           required
                         />
                       </div>
+                    </div>
+                    <div className="form-row">
                       <div className="form-group">
                         <label>Phone *</label>
                         <input
                           type="tel"
                           name="phone"
                           value={formData.phone}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Email *</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
                           onChange={handleInputChange}
                           required
                         />
@@ -558,7 +620,38 @@ export default function CheckoutPage() {
                   <button 
                     type="button"
                     className="checkout-continue-btn"
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      // Validate required fields
+                      if (!formData.name.trim()) {
+                        toast.error('Please enter your full name');
+                        return;
+                      }
+                      if (!formData.email.trim()) {
+                        toast.error('Please enter your email');
+                        return;
+                      }
+                      if (!formData.phone.trim()) {
+                        toast.error('Please enter your phone number');
+                        return;
+                      }
+                      if (!formData.address.trim()) {
+                        toast.error('Please enter your address');
+                        return;
+                      }
+                      if (!formData.city.trim()) {
+                        toast.error('Please enter your city');
+                        return;
+                      }
+                      if (!formData.state) {
+                        toast.error('Please select your state');
+                        return;
+                      }
+                      if (!formData.pincode.trim()) {
+                        toast.error('Please enter your pincode');
+                        return;
+                      }
+                      setStep(2);
+                    }}
                   >
                     Continue to Payment →
                   </button>
