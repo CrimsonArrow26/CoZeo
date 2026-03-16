@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { QueryProvider } from './providers/QueryProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './CartContext.jsx';
-import { useLenis } from './hooks/useLenis';
+import { useLenis, scrollToTop } from './hooks/useLenis';
 import HomePage from './pages/HomePage';
 import ProductPage from './pages/ProductPage';
 import CategoryPage from './pages/CategoryPage';
@@ -28,12 +28,12 @@ import PrivacyPage from './pages/PrivacyPage';
 import RefundPage from './pages/RefundPage';
 import ShippingPage from './pages/ShippingPage';
 
-// Scroll to top on route change
+// Scroll to top on route change using Lenis
 function ScrollToTop() {
   const { pathname } = useLocation();
   
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollToTop();
   }, [pathname]);
   
   return null;
