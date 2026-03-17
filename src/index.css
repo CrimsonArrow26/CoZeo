@@ -753,7 +753,7 @@
 
 /* ===== DEAL LEFT BOX FLOAT ===== */
 .deal-price {
-  color: var(--text-dark);
+  color: #F4F9E9;
   transition: transform 0.3s ease;
   display: inline-block;
   font-weight: 700;
@@ -764,9 +764,18 @@
 }
 
 .deal-discount {
-  color: var(--text-muted);
+  color: #B4B8AB;
   text-decoration: line-through;
   font-weight: 500;
+}
+
+/* ===== DEAL SECTION TEXT COLORS ===== */
+.deal-left-box .section-text.light {
+  color: #EEF0EB;
+}
+
+.deal-left-box .section-title {
+  color: #F4F9E9;
 }
 
 /* ===== SUBSCRIBE BUTTON ===== */
