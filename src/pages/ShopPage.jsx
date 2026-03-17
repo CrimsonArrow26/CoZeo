@@ -69,8 +69,6 @@ export default function ShopPage() {
   const { data: products, isLoading, error } = useProducts(filters);
   const { addToCart } = useCart();
 
-  console.log('ShopPage products:', { isLoading, error: error?.message, count: products?.length });
-
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };

@@ -41,11 +41,8 @@ export default function DashboardPage() {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    console.log('Updating profile with:', profileForm);
-    console.log('Current user:', user?.id);
     const { error } = await updateProfile(profileForm);
     if (error) {
-      console.error('Profile update error:', error);
       toast.error('Failed to update profile: ' + error.message);
     } else {
       toast.success('Profile updated successfully');
@@ -55,13 +52,10 @@ export default function DashboardPage() {
 
   const handleSignOut = async () => {
     try {
-      console.log('Sign out clicked');
       await signOut();
-      console.log('Sign out successful');
       toast.success('Signed out successfully');
       navigate('/');
     } catch (err) {
-      console.error('Sign out error:', err);
       toast.error('Failed to sign out');
     }
   };
@@ -138,10 +132,7 @@ export default function DashboardPage() {
               <button 
                 type="button" 
                 className="sign-out-btn" 
-                onClick={(e) => {
-                  console.log('Button clicked!', e);
-                  handleSignOut();
-                }}
+                onClick={handleSignOut}
               >
                 <LogOut size={18} />
                 Sign Out

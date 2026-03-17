@@ -97,14 +97,8 @@ export default function CheckoutPage() {
             pincode: formData.pincode,
           })
           .eq('id', user.id);
-        
-        if (error) {
-          console.error('Failed to save address to profile:', error);
-        } else {
-          console.log('Shipping address saved to profile');
-        }
       } catch (err) {
-        console.error('Error saving address:', err);
+        // Silently fail - address save is non-critical
       }
     };
 
@@ -133,6 +127,7 @@ export default function CheckoutPage() {
             payment_method: 'razorpay',
             payment_status: 'pending',
             shipping_name: formData.name,
+            shipping_email: formData.email,
             shipping_phone: formData.phone,
             shipping_address: formData.address,
             shipping_city: formData.city,
@@ -143,8 +138,6 @@ export default function CheckoutPage() {
           items: orderItems,
         });
 
-        console.log('Order created, opening Razorpay checkout:', order);
-
         // Open Razorpay checkout
         openRazorpayCheckout({
           amount: finalTotal,
@@ -152,8 +145,6 @@ export default function CheckoutPage() {
           userEmail: user.email || '',
           userName: profile?.name || formData.name || '',
           onSuccess: async (paymentId, razorpayOrderId) => {
-            console.log('Razorpay payment success:', { paymentId, razorpayOrderId });
-            
             // Update order status to paid
             const { error: updateError } = await supabase
               .from('orders')
@@ -166,15 +157,12 @@ export default function CheckoutPage() {
               .eq('id', order.id);
             
             if (updateError) {
-              console.error('Failed to update order status:', updateError);
               toast.error('Payment succeeded but order update failed. Contact support.');
             } else {
-              console.log('Order status updated to paid');
               toast.success('Payment successful!');
               
               // Generate Razorpay Invoice after successful payment
               try {
-                console.log('[Invoice] Starting invoice generation...');
                 const invoiceResult = await createRazorpayInvoice(
                   order.id,
                   paymentId,
@@ -200,7 +188,6 @@ export default function CheckoutPage() {
                 );
                 
                 if (invoiceResult.success) {
-                  console.log('[Invoice] Invoice generated successfully:', invoiceResult);
                   // Store invoice details in the order
                   await supabase
                     .from('orders')
@@ -211,12 +198,8 @@ export default function CheckoutPage() {
                     })
                     .eq('id', order.id);
                   toast.success('Invoice generated successfully!');
-                } else {
-                  console.error('[Invoice] Failed to generate invoice:', invoiceResult.error);
-                  // Don't block the flow if invoice generation fails
                 }
               } catch (invoiceError) {
-                console.error('[Invoice] Error generating invoice:', invoiceError);
                 // Don't block the flow if invoice generation fails
               }
               
@@ -229,7 +212,6 @@ export default function CheckoutPage() {
                 .select('id, status, payment_status, display_id')
                 .eq('id', order.id)
                 .single();
-              console.log('Verified updated order:', updatedOrder);
               
               // Update cache immediately with new status
               queryClient.setQueryData(['orders', 'detail', order.id], (oldData) => {
@@ -255,12 +237,10 @@ export default function CheckoutPage() {
             navigate(`/order-confirmation/${order.id}`);
           },
           onError: (error) => {
-            console.error('Razorpay payment error:', error);
             toast.error('Payment failed: ' + error.message);
           },
         });
       } catch (error) {
-        console.error('Razorpay order creation error:', error);
         toast.error('Failed to initiate payment. Please try again.');
       }
       return;
@@ -288,6 +268,7 @@ export default function CheckoutPage() {
           total: finalTotal,
           payment_method: paymentMethod,
           shipping_name: formData.name,
+          shipping_email: formData.email,
           shipping_phone: formData.phone,
           shipping_address: formData.address,
           shipping_city: formData.city,

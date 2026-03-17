@@ -9,9 +9,7 @@ import ChatWidget from '../components/ChatWidget';
 import { Star } from 'lucide-react';
 
 export default function ProductPage() {
-  console.log('ProductPage COMPONENT MOUNTED');
   const { slug } = useParams();
-  console.log('ProductPage slug:', slug);
   const { data: product, isLoading, error } = useProduct(slug || '');
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
@@ -39,8 +37,6 @@ export default function ProductPage() {
 
   const displayProduct = product || cachedProduct;
   const isReallyLoading = isLoading && !displayProduct;
-
-  console.log('ProductPage render:', { slug, isLoading, isReallyLoading, hasData: !!displayProduct, hasError: !!error, productName: displayProduct?.name });
 
   if (isReallyLoading) {
     return (

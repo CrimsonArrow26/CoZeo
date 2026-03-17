@@ -40,7 +40,6 @@ export default function AdminOrdersPage() {
       setEditingOrder(null);
     } catch (error) {
       toast.error('Failed to update order status');
-      console.error(error);
     }
   };
 

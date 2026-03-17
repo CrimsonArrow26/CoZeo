@@ -19,7 +19,6 @@ export default function AdminProductsPage() {
       if (error) throw error;
       toast.success('Product deleted');
     } catch (error) {
-      console.error('Delete error:', error);
       toast.error('Failed to delete product');
     }
   };

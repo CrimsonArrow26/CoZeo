@@ -1,14 +1,54 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import { Footer } from '../components/SubscribeFooter';
 import { useOrder, useOrderItems } from '../hooks/useOrders';
 import { formatPrice, formatDateTime } from '../lib/utils';
 import { CheckCircle, Package, Truck, Home, Download } from 'lucide-react';
+import { sendOrderConfirmationEmails } from '../services/email.service';
+import { toast } from 'sonner';
 
 export default function OrderConfirmationPage() {
   const { id } = useParams();
   const { data: order, isLoading } = useOrder(id || '');
   const { data: orderItems } = useOrderItems(id || '');
+  const emailSentRef = useRef(false);
+
+  // Send order confirmation emails when order data is loaded
+  useEffect(() => {
+    if (order && orderItems && !emailSentRef.current && !isLoading) {
+      const sendEmails = async () => {
+        try {
+          const items = orderItems.map(item => ({
+            name: item.product_name,
+            quantity: item.quantity,
+            price: item.total_price || item.price || 0,
+          }));
+
+          const shippingAddress = `${order.shipping_name}\n${order.shipping_address}\n${order.shipping_city}, ${order.shipping_state} ${order.shipping_pincode}\nPhone: ${order.shipping_phone}`;
+
+          await sendOrderConfirmationEmails({
+            customerEmail: order.shipping_email,
+            customerName: order.shipping_name,
+            orderId: order.display_id || order.id.slice(-8).toUpperCase(),
+            orderDate: formatDateTime(order.created_at),
+            items: items,
+            total: order.total,
+            shippingAddress: shippingAddress,
+            paymentMethod: order.payment_method,
+            invoiceUrl: `${window.location.origin}/orders/${order.id}/invoice`,
+          });
+
+          emailSentRef.current = true;
+          toast.success('Order confirmation email sent!');
+        } catch (error) {
+          // Don't show error to user, order is still confirmed
+        }
+      };
+
+      sendEmails();
+    }
+  }, [order, orderItems, isLoading]);
 
   if (isLoading) {
     return (

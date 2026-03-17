@@ -31,7 +31,6 @@ export async function fetchUserCart(): Promise<CartItemDB[]> {
     .select('*, product:products(id, name, slug, price, discount_price, images, stock)');
   
   if (error) {
-    console.error('fetchUserCart error:', error);
     throw error;
   }
   
@@ -57,7 +56,6 @@ export async function addCartItem(
     .single();
   
   if (error) {
-    console.error('addCartItem error:', error);
     throw error;
   }
   
@@ -77,7 +75,6 @@ export async function updateCartItem(
     .single();
   
   if (error) {
-    console.error('updateCartItem error:', error);
     throw error;
   }
   
@@ -92,7 +89,6 @@ export async function removeCartItem(cartItemId: string): Promise<void> {
     .eq('id', cartItemId);
   
   if (error) {
-    console.error('removeCartItem error:', error);
     throw error;
   }
 }
@@ -105,7 +101,6 @@ export async function clearUserCart(): Promise<void> {
     .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
   
   if (error) {
-    console.error('clearUserCart error:', error);
     throw error;
   }
 }
@@ -122,6 +117,19 @@ export async function mergeGuestCart(
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return;
   
+  // Don't call if no guest items to merge
+  if (!guestItems || guestItems.length === 0) {
+    return;
+  }
+  
+  // Transform guest items to match database function parameter names
+  const transformedItems = guestItems.map(item => ({
+    product_id: item.productId,
+    size: item.size,
+    color: item.color || null,
+    quantity: item.quantity,
+  }));
+  
   // Call the database function to merge carts
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/merge_cart_on_login`, {
     method: 'POST',
@@ -132,11 +140,12 @@ export async function mergeGuestCart(
     },
     body: JSON.stringify({
       p_user_id: session.user.id,
-      p_guest_items: guestItems,
+      p_guest_items: transformedItems,
     }),
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to merge cart: ${response.status}`);
+    // Silently fail - don't block login on cart merge failure
+    return;
   }
 }

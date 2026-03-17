@@ -19,16 +19,10 @@ export function loadRazorpayScript() {
 
 // Create Razorpay order via Supabase Edge Function
 async function createRazorpayOrder(amount: number, orderId: string, userEmail: string, userName: string) {
-  console.log('[Razorpay] Starting createRazorpayOrder...');
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rbjivulozgubrenzwcjx.supabase.co';
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
   
-  console.log('[Razorpay] Supabase URL:', supabaseUrl);
-  console.log('[Razorpay] Supabase Key exists:', !!supabaseKey);
-  console.log('[Razorpay] Creating order with:', { amount, orderId, userEmail, userName });
-  
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/create-razorpay-order`;
-  console.log('[Razorpay] Edge Function URL:', edgeFunctionUrl);
   
   try {
     const response = await fetch(edgeFunctionUrl, {
@@ -45,20 +39,14 @@ async function createRazorpayOrder(amount: number, orderId: string, userEmail: s
       }),
     });
     
-    console.log('[Razorpay] Response status:', response.status);
-    console.log('[Razorpay] Response headers:', Object.fromEntries(response.headers.entries()));
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Razorpay] Edge Function error:', response.status, errorText);
       throw new Error('Failed to create Razorpay order: ' + errorText);
     }
     
     const data = await response.json();
-    console.log('[Razorpay] Order created successfully:', data);
     return data;
   } catch (fetchError) {
-    console.error('[Razorpay] Fetch error:', fetchError);
     throw fetchError;
   }
 }
@@ -108,20 +96,13 @@ export async function openRazorpayCheckout({
   onSuccess: (paymentId: string, orderId: string) => Promise<void> | void;
   onError: (error: Error) => void;
 }) {
-  console.log('[Razorpay] openRazorpayCheckout called with:', { amount, orderId, userEmail, userName });
-  
   try {
-    console.log('[Razorpay] Loading Razorpay script...');
     await loadRazorpayScript();
-    console.log('[Razorpay] Script loaded successfully');
     
-    console.log('[Razorpay] Creating Razorpay order via Edge Function...');
     const razorpayOrder = await createRazorpayOrder(amount, orderId, userEmail, userName);
-    console.log('[Razorpay] Got Razorpay order:', razorpayOrder);
     
     // Use key_id from Edge Function response
     const razorpayKey = razorpayOrder.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
-    console.log('[Razorpay] Key ID exists:', !!razorpayKey);
     
     const options = {
       key: razorpayKey,
@@ -138,7 +119,6 @@ export async function openRazorpayCheckout({
         color: '#121212',
       },
       handler: async function (response: any) {
-        console.log('[Razorpay] Payment handler called:', response);
         try {
           const verification = await verifyRazorpayPayment(
             response.razorpay_order_id,
@@ -152,25 +132,19 @@ export async function openRazorpayCheckout({
             onError(new Error('Payment verification failed'));
           }
         } catch (error) {
-          console.error('[Razorpay] Verification error:', error);
           onError(error as Error);
         }
       },
     };
     
-    console.log('[Razorpay] Creating Razorpay instance with options:', { ...options, key: '***hidden***' });
     const razorpay = new (window as any).Razorpay(options);
     
     razorpay.on('payment.failed', function (response: any) {
-      console.error('[Razorpay] Payment failed:', response.error);
       onError(new Error(response.error.description));
     });
     
-    console.log('[Razorpay] Opening checkout...');
     razorpay.open();
-    console.log('[Razorpay] Checkout opened successfully');
   } catch (error) {
-    console.error('[Razorpay] Error in openRazorpayCheckout:', error);
     onError(error as Error);
   }
 }
@@ -215,13 +189,10 @@ export async function createRazorpayInvoice(
   total: number,
   shippingAddress: RazorpayShippingAddress
 ): Promise<RazorpayInvoiceResult> {
-  console.log('[Razorpay Invoice] Starting createRazorpayInvoice...');
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rbjivulozgubrenzwcjx.supabase.co';
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
   
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/create-razorpay-invoice`;
-  console.log('[Razorpay Invoice] Edge Function URL:', edgeFunctionUrl);
-  console.log('[Razorpay Invoice] Invoice data:', { orderId, customerEmail, total, itemsCount: items.length });
   
   try {
     const response = await fetch(edgeFunctionUrl, {
@@ -246,12 +217,10 @@ export async function createRazorpayInvoice(
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Razorpay Invoice] Edge Function error:', response.status, errorText);
       return { success: false, error: 'Failed to create invoice: ' + errorText };
     }
     
     const data = await response.json();
-    console.log('[Razorpay Invoice] Invoice created successfully:', data);
     
     return {
       success: true,
@@ -261,7 +230,6 @@ export async function createRazorpayInvoice(
       status: data.status,
     };
   } catch (error) {
-    console.error('[Razorpay Invoice] Fetch error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

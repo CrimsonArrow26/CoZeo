@@ -99,7 +99,7 @@ export function useOrders() {
           .in('order_id', orderIds);
         
         if (itemsError) {
-          console.error('Failed to fetch order items:', itemsError);
+          // Silently handle items fetch error
         }
         
         // Group items by order
@@ -175,7 +175,6 @@ export function useCreateOrder() {
         .rpc('generate_order_display_id');
       
       if (displayIdError) {
-        console.error('Failed to generate display_id:', displayIdError);
         // Fallback: generate locally
         const timestamp = Date.now();
         order.display_id = `CO${timestamp.toString().slice(-6)}`;

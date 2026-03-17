@@ -70,7 +70,7 @@ async function calculateStockForProducts(products: (Product & { id: string; stoc
     .in('product_id', productIds);
   
   if (error) {
-    console.error('Error fetching order items:', error);
+    // Silently handle order items fetch error
   }
   
   // Calculate ordered quantities per product
@@ -139,7 +139,6 @@ export function useProducts(filters?: { category?: string; badge?: string; minPr
   return useQuery({
     queryKey: productKeys.list(filters || {}),
     queryFn: async () => {
-      console.log('Fetching products with calculated stock:', filters);
       try {
         // Fetch products
         const { data: products, error: productsError } = await supabase
@@ -169,10 +168,8 @@ export function useProducts(filters?: { category?: string; badge?: string; minPr
           filtered = filtered.filter((p: Product) => (p.discount_price || p.price) <= filters.maxPrice!);
         }
         
-        console.log('Products fetch result:', { count: filtered?.length });
         return filtered as Product[];
       } catch (err) {
-        console.error('Products fetch failed:', err);
         throw err;
       }
     },
@@ -208,7 +205,7 @@ export function useProduct(slug: string) {
           .eq('product_id', product.id);
         
         if (orderError) {
-          console.error('Error fetching order items:', orderError);
+          // Silently handle order items fetch error
         }
         
         // Calculate ordered quantity
@@ -315,7 +312,9 @@ export function useUpdateProduct() {
           .from('products')
           .update({ is_spotlight: false })
           .eq('is_spotlight', true);
-        if (clearError) console.error('Failed to clear previous spotlight:', clearError);
+        if (clearError) {
+          // Silently handle clear error
+        }
       }
       
       const { data, error } = await supabase.from('products').update(updates).eq('id', id).select().single();

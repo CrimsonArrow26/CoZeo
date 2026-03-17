@@ -112,7 +112,6 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
       toast.error(result.error.message);
       setIsLoading(false);
     }
-    // OAuth will redirect, so no need to close modal
   };
 
   const handleForgotPassword = async (e) => {
@@ -261,8 +260,6 @@ function UserDropdown({ user, profile, isAdmin, onSignOut }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  console.log('UserDropdown render:', { email: user?.email, isAdmin, profileName: profile?.name });
-
   return (
     <div className="user-dropdown">
       <div className="account-login-button" onClick={() => setIsOpen(!isOpen)}>
@@ -371,7 +368,7 @@ export default function Header() {
                   <img src="/images/user-20-2-.avif" alt="" className="account-login-icon" />
                 </div>
               )}
-              <div className="mobile-menu-open-btn" onClick={() => { console.log('Mobile menu clicked'); setMobileOpen(true); }}>
+              <div className="mobile-menu-open-btn" onClick={() => setMobileOpen(true)}>
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <line x1="3" y1="12" x2="21" y2="12"></line>
                   <line x1="3" y1="6" x2="21" y2="6"></line>

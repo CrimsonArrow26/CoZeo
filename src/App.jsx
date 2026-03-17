@@ -4,6 +4,7 @@ import { QueryProvider } from './providers/QueryProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './CartContext.jsx';
 import { useLenis, scrollToTop } from './hooks/useLenis';
+import { initEmailJS } from './services/email.service';
 import HomePage from './pages/HomePage';
 import ProductPage from './pages/ProductPage';
 import CategoryPage from './pages/CategoryPage';
@@ -41,6 +42,12 @@ function ScrollToTop() {
 
 function AppContent() {
   useLenis();
+  
+  // Initialize EmailJS on app load
+  useEffect(() => {
+    initEmailJS();
+  }, []);
+  
   return (
     <>
       <ScrollToTop />

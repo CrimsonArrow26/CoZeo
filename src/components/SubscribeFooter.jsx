@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { sendJoinCoZeoEmails } from '../services/email.service';
+import { toast } from 'sonner';
 
 export function SubscribeSection() {
   const ref = useRef();
@@ -16,10 +18,27 @@ export function SubscribeSection() {
   }, []);
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await sendJoinCoZeoEmails({ email });
+      setSubmitted(true);
+      toast.success('Thankyou for submitting your Request.');
+    } catch (error) {
+      // Still show success to user even if email fails
+      setSubmitted(true);
+      toast.success('Thankyou for submitting your Request.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,8 +64,14 @@ export function SubscribeSection() {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         required
+                        disabled={loading}
                       />
-                      <input type="submit" className="subscribe-button w-button" value="Subscribe" />
+                      <input 
+                        type="submit" 
+                        className="subscribe-button w-button" 
+                        value={loading ? 'Joining...' : 'Subscribe'} 
+                        disabled={loading}
+                      />
                     </div>
                     <p className="subscribe-text">Weekly newsletter. Unsubscribe anytime.</p>
                   </form>

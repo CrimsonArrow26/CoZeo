@@ -69,7 +69,6 @@ export default function GiveawayPage() {
       });
     } catch (error) {
       // Silent fail - Google Form submission is best effort
-      console.log('Google Form submission attempted');
     }
   };
 

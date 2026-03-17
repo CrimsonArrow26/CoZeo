@@ -146,7 +146,6 @@ export default function AdminProductEditPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    console.log('Saving product:', { id, productId: product?.id, hasProduct: !!product });
     try {
       if (id && !product?.id) {
         throw new Error('Product ID not loaded yet');
@@ -164,7 +163,6 @@ export default function AdminProductEditPage() {
       toast.success(id ? 'Product saved successfully' : 'Product created successfully');
       navigate('/admin/products');
     } catch (error: any) {
-      console.error('Save error:', error);
       toast.error('Failed to save product: ' + (error?.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
@@ -184,7 +182,6 @@ export default function AdminProductEditPage() {
       toast.success('Product deleted successfully');
       navigate('/admin/products');
     } catch (error) {
-      console.error('Delete error:', error);
       toast.error('Failed to delete product');
     }
   };

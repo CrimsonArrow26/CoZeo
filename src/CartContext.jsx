@@ -148,8 +148,7 @@ export function CartProvider({ children }) {
         // Reload cart from database
         await loadCart();
       } catch (err) {
-        // Log error for debugging
-        console.error('addToCart error:', err);
+        // Silently fail - cart operation is non-critical
       } finally {
         setIsSyncing(false);
       }
