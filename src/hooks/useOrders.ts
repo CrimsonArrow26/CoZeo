@@ -255,3 +255,30 @@ export function useUpdateOrderStatus() {
     },
   });
 }
+
+// Update payment status (admin)
+export function useUpdatePaymentStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      paymentStatus,
+    }: {
+      id: string;
+      paymentStatus: 'pending' | 'paid' | 'failed';
+    }) => {
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ payment_status: paymentStatus })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
+    },
+  });
+}

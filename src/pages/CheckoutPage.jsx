@@ -9,6 +9,7 @@ import { useCreateOrder } from '../hooks/useOrders';
 import { useValidateCoupon } from '../hooks/useCoupons';
 import { formatPrice } from '../lib/utils';
 import { openRazorpayCheckout, createRazorpayInvoice } from '../lib/razorpay';
+import { sendOrderConfirmationEmails } from '../services/email.service';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -236,8 +237,20 @@ export default function CheckoutPage() {
             clearCart();
             navigate(`/order-confirmation/${order.id}`);
           },
-          onError: (error) => {
+          onError: async (error) => {
             toast.error('Payment failed: ' + error.message);
+            // Cancel the pending order since payment failed
+            try {
+              await supabase
+                .from('orders')
+                .update({ 
+                  payment_status: 'failed',
+                  status: 'cancelled'
+                })
+                .eq('id', order.id);
+            } catch (cancelError) {
+              // Silent fail - order remains pending but payment failed
+            }
           },
         });
       } catch (error) {
@@ -278,6 +291,67 @@ export default function CheckoutPage() {
         },
         items: orderItems,
       });
+
+      // Generate invoice for COD order
+      try {
+        const invoiceResult = await createRazorpayInvoice(
+          order.id,
+          'COD-' + Date.now(),
+          formData.email,
+          formData.name,
+          formData.phone,
+          orderItems.map(item => ({
+            product_name: item.product_name,
+            unit_price: item.unit_price,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+          })),
+          subtotal,
+          discountAmount,
+          finalTotal,
+          {
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            pincode: formData.pincode,
+          }
+        );
+        
+        if (invoiceResult.success) {
+          // Store invoice details in the order
+          await supabase
+            .from('orders')
+            .update({
+              razorpay_invoice_id: invoiceResult.invoice_id,
+              razorpay_invoice_number: invoiceResult.invoice_number,
+              razorpay_invoice_url: invoiceResult.invoice_url,
+            })
+            .eq('id', order.id);
+        }
+      } catch (invoiceError) {
+        // Don't block the flow if invoice generation fails
+      }
+
+      // Send order confirmation emails for COD
+      try {
+        await sendOrderConfirmationEmails({
+          customerEmail: formData.email,
+          customerName: formData.name,
+          orderId: order.display_id || order.id,
+          orderDate: new Date().toLocaleDateString(),
+          items: orderItems.map(item => ({
+            name: item.product_name,
+            quantity: item.quantity,
+            price: item.total_price || item.unit_price,
+          })),
+          total: finalTotal,
+          shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
+          paymentMethod: 'Cash on Delivery',
+        });
+      } catch (emailError) {
+        // Don't block the flow if email fails
+      }
 
       // Save shipping address to profile for future orders
       await saveShippingAddressToProfile();
@@ -457,13 +531,14 @@ export default function CheckoutPage() {
                       </div>
                     </label>
 
-                    <label className={`payment-method ${paymentMethod === 'upi' ? 'selected' : ''}`}>
+                    <label className={`payment-method disabled ${paymentMethod === 'upi' ? 'selected' : ''}`}>
                       <input
                         type="radio"
                         name="payment"
                         value="upi"
                         checked={paymentMethod === 'upi'}
-                        onChange={() => setPaymentMethod('upi')}
+                        onChange={() => {}}
+                        disabled
                       />
                       <div className="payment-icon upi">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -473,17 +548,18 @@ export default function CheckoutPage() {
                       </div>
                       <div className="payment-info">
                         <strong>UPI Payment</strong>
-                        <span>Google Pay, PhonePe, Paytm</span>
+                        <span>Temporarily unavailable</span>
                       </div>
                     </label>
 
-                    <label className={`payment-method ${paymentMethod === 'razorpay' ? 'selected' : ''}`}>
+                    <label className={`payment-method disabled ${paymentMethod === 'razorpay' ? 'selected' : ''}`}>
                       <input
                         type="radio"
                         name="payment"
                         value="razorpay"
                         checked={paymentMethod === 'razorpay'}
-                        onChange={() => setPaymentMethod('razorpay')}
+                        onChange={() => {}}
+                        disabled
                       />
                       <div className="payment-icon card">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -493,7 +569,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="payment-info">
                         <strong>Credit / Debit Card</strong>
-                        <span>Visa, Mastercard, RuPay</span>
+                        <span>Temporarily unavailable</span>
                       </div>
                     </label>
                   </div>

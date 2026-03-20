@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../../components/Header';
 import { Footer } from '../../components/SubscribeFooter';
-import { useOrders, useUpdateOrderStatus } from '../../hooks/useOrders';
+import { useOrders, useUpdateOrderStatus, useUpdatePaymentStatus } from '../../hooks/useOrders';
 import { ArrowLeft, Package, Search, CreditCard, Truck } from 'lucide-react';
 import { formatPrice, formatDateTime } from '../../lib/utils';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 export default function AdminOrdersPage() {
   const { data: orders, isLoading } = useOrders();
   const updateOrderStatus = useUpdateOrderStatus();
+  const updatePaymentStatus = useUpdatePaymentStatus();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingOrder, setEditingOrder] = useState(null);
@@ -202,6 +203,24 @@ export default function AdminOrdersPage() {
                           </div>
                         ) : (
                           <div className="action-buttons">
+                            {/* Confirm Payment button - only for COD orders with pending payment */}
+                            {order.payment_method === 'cod' && order.payment_status === 'pending' && (
+                              <button
+                                className="btn-confirm-payment"
+                                onClick={() => {
+                                  if (confirm(`Confirm payment received for COD order ${order.display_id || order.id.slice(0, 8)}?`)) {
+                                    updatePaymentStatus.mutate({
+                                      id: order.id,
+                                      paymentStatus: 'paid'
+                                    });
+                                  }
+                                }}
+                                disabled={updatePaymentStatus.isPending}
+                              >
+                                <CreditCard size={16} />
+                                Confirm Payment
+                              </button>
+                            )}
                             <button 
                               className="btn-edit-status"
                               onClick={() => setEditingOrder(order.id)}
