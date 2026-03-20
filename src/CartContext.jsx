@@ -211,15 +211,13 @@ export function CartProvider({ children }) {
         setIsSyncing(true);
         try {
           if (qty < 1) {
-            // Remove item when quantity is 0
             await removeCartItemDB(cartItem.id);
           } else {
             await updateCartItemDB(cartItem.id, qty);
           }
-          // Reload cart from database after update
           await loadCart();
         } catch {
-          // Silently fail
+          // Silently fail - cart will refresh on next load
         } finally {
           setIsSyncing(false);
         }

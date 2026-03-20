@@ -97,6 +97,9 @@ export function Footer() {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // Check if SubscribeSection is on this page
+  const hasSubscribeSection = location.pathname === '/';
+  
   const scrollTo = (id) => (e) => {
     e.preventDefault();
     if (location.pathname !== '/') {
@@ -107,7 +110,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="main-footer" style={{ marginTop: '60px' }}>
+    <footer className="main-footer" style={{ marginTop: hasSubscribeSection ? '0' : '60px' }}>
       <div className="footer-widgets-box">
         <div className="w-layout-blockcontainer container w-container">
           <div className="w-layout-grid footer-grid">

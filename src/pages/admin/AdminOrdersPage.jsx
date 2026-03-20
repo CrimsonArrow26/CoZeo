@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../../components/Header';
 import { Footer } from '../../components/SubscribeFooter';
-import { useOrders, useUpdateOrderStatus, useUpdatePaymentStatus } from '../../hooks/useOrders';
+import { useOrders, useUpdateOrderStatus, useUpdatePaymentStatus, useDeleteOrder, orderKeys } from '../../hooks/useOrders';
 import { ArrowLeft, Package, Search, CreditCard, Truck } from 'lucide-react';
 import { formatPrice, formatDateTime } from '../../lib/utils';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function AdminOrdersPage() {
   const { data: orders, isLoading } = useOrders();
   const updateOrderStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
+  const deleteOrder = useDeleteOrder();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingOrder, setEditingOrder] = useState(null);
@@ -237,6 +240,26 @@ export default function AdminOrdersPage() {
                             >
                               View Details
                             </Link>
+                            <button
+                              className="btn-delete-order"
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to DELETE order ${order.display_id || order.id.slice(0, 8)}? This action cannot be undone.`)) {
+                                  deleteOrder.mutate(order.id, {
+                                    onSuccess: () => {
+                                      toast.success('Order deleted successfully');
+                                      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+                                    },
+                                    onError: (error) => {
+                                      toast.error(`Failed to delete order: ${error.message}`);
+                                    }
+                                  });
+                                }
+                              }}
+                              disabled={deleteOrder.isPending}
+                              title="Delete order"
+                            >
+                              {deleteOrder.isPending ? '⏳' : '🗑️'}
+                            </button>
                           </div>
                         )}
                       </div>

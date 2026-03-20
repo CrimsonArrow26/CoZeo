@@ -5,6 +5,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './CartContext.jsx';
 import { useLenis, scrollToTop } from './hooks/useLenis';
 import { initEmailJS } from './services/email.service';
+import ChatWidget from './components/ChatWidget';
+import GoToTop from './components/GoToTop';
 import HomePage from './pages/HomePage';
 import ProductPage from './pages/ProductPage';
 import CategoryPage from './pages/CategoryPage';
@@ -41,6 +43,7 @@ function ScrollToTop() {
 }
 
 function AppContent() {
+  const location = useLocation();
   useLenis();
   
   // Initialize EmailJS on app load
@@ -76,6 +79,8 @@ function AppContent() {
       <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
       <Route path="/admin/coupons" element={<AdminRoute><AdminCouponsPage /></AdminRoute>} />
     </Routes>
+    <GoToTop />
+    <ChatWidget />
     </>
   );
 }

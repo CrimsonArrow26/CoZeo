@@ -7,9 +7,17 @@ import { toast } from 'sonner';
 
 function CartSidebar({ onClose }) {
   const { cartItems, removeFromCart, updateQty, subtotal } = useCart();
+  
+  // Handle backdrop click
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+  
   return (
-    <div className="w-commerce-commercecartcontainerwrapper w-commerce-commercecartcontainerwrapper--cartType-rightSidebar" style={{ display: 'flex' }}>
-      <div className="w-commerce-commercecartcontainer" role="dialog">
+    <div className="w-commerce-commercecartcontainerwrapper w-commerce-commercecartcontainerwrapper--cartType-rightSidebar" style={{ display: 'flex' }} onClick={handleBackdropClick}>
+      <div className="w-commerce-commercecartcontainer" role="dialog" onClick={(e) => e.stopPropagation()}>
         <div className="w-commerce-commercecartheader">
           <h3 className="w-commerce-commercecartheading cart-title">Your Cart</h3>
           <a className="w-commerce-commercecartcloselink close-button w-inline-block" role="button" onClick={onClose}>
@@ -42,7 +50,7 @@ function CartSidebar({ onClose }) {
                         <button 
                           type="button" 
                           className="qty-btn minus"
-                          onClick={() => updateQty(item.id, item.size, Math.max(1, item.qty - 1))}
+                          onClick={() => updateQty(item.id, item.size, item.qty - 1)}
                         >−</button>
                         <span className="qty-value">{item.qty}</span>
                         <button 

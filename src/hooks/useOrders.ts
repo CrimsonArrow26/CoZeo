@@ -61,7 +61,7 @@ async function supabaseFetch(table: string, options?: {
   return options?.single ? data[0] : data;
 }
 
-const orderKeys = {
+export const orderKeys = {
   all: ['orders'] as const,
   lists: () => [...orderKeys.all, 'list'] as const,
   list: (filters: object) => [...orderKeys.lists(), filters] as const,
@@ -280,5 +280,41 @@ export function useUpdatePaymentStatus() {
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
     },
+  });
+}
+
+// Delete order (admin)
+export function useDeleteOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // First delete order items (due to foreign key constraint)
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', id)
+        .select('*');
+      if (itemsError) {
+        throw itemsError;
+      }
+
+      // Then delete the order
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', id)
+        .select('*');
+      if (orderError) {
+        throw orderError;
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+    },
+    onError: (error) => {
+      console.error('Failed to delete order:', error);
+    }
   });
 }
