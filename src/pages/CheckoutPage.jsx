@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCreateOrder } from '../hooks/useOrders';
 import { useValidateCoupon } from '../hooks/useCoupons';
 import { formatPrice } from '../lib/utils';
-import { openRazorpayCheckout, createRazorpayInvoice } from '../lib/razorpay';
+import { openCashfreeCheckout, createCashfreeReceipt } from '../lib/cashfree';
 import { sendOrderConfirmationEmails } from '../services/email.service';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -103,8 +103,8 @@ export default function CheckoutPage() {
       }
     };
 
-    // Handle Razorpay payment (includes UPI and Card payments)
-    if (paymentMethod === 'razorpay' || paymentMethod === 'upi') {
+    // Handle Cashfree payment (UPI or Card)
+    if (paymentMethod === 'cashfree_upi' || paymentMethod === 'cashfree_card') {
       try {
         // First create the order in pending state
         const orderItems = cartItems.map(item => ({
@@ -125,7 +125,7 @@ export default function CheckoutPage() {
             discount_amount: discountAmount,
             coupon_code: appliedCoupon?.code || null,
             total: finalTotal,
-            payment_method: 'razorpay',
+            payment_method: paymentMethod,
             payment_status: 'pending',
             shipping_name: formData.name,
             shipping_email: formData.email,
@@ -139,21 +139,22 @@ export default function CheckoutPage() {
           items: orderItems,
         });
 
-        // Open Razorpay checkout
-        openRazorpayCheckout({
+        // Open Cashfree checkout
+        openCashfreeCheckout({
           amount: finalTotal,
           orderId: order.id,
           userEmail: user.email || '',
           userName: profile?.name || formData.name || '',
-          onSuccess: async (paymentId, razorpayOrderId) => {
+          userPhone: formData.phone || '',
+          onSuccess: async (paymentId, cashfreeOrderId) => {
             // Update order status to paid
             const { error: updateError } = await supabase
               .from('orders')
               .update({ 
                 payment_status: 'paid',
                 status: 'confirmed',
-                razorpay_payment_id: paymentId,
-                razorpay_order_id: razorpayOrderId
+                cashfree_payment_id: paymentId,
+                cashfree_order_id: cashfreeOrderId
               })
               .eq('id', order.id);
             
@@ -162,11 +163,11 @@ export default function CheckoutPage() {
             } else {
               toast.success('Payment successful!');
               
-              // Generate Razorpay Invoice after successful payment
+              // Generate Cashfree Receipt after successful payment
               try {
-                const invoiceResult = await createRazorpayInvoice(
+                const receiptResult = await createCashfreeReceipt(
                   order.id,
-                  paymentId,
+                  cashfreeOrderId,
                   user.email || '',
                   profile?.name || formData.name || '',
                   formData.phone || '',
@@ -188,20 +189,20 @@ export default function CheckoutPage() {
                   }
                 );
                 
-                if (invoiceResult.success) {
-                  // Store invoice details in the order
+                if (receiptResult.success) {
+                  // Store receipt details in the order
                   await supabase
                     .from('orders')
                     .update({
-                      razorpay_invoice_id: invoiceResult.invoice_id,
-                      razorpay_invoice_number: invoiceResult.invoice_number,
-                      razorpay_invoice_url: invoiceResult.invoice_url,
+                      cashfree_receipt_id: receiptResult.receipt_id,
+                      cashfree_receipt_number: receiptResult.receipt_number,
+                      cashfree_receipt_url: receiptResult.receipt_url,
                     })
                     .eq('id', order.id);
-                  toast.success('Invoice generated successfully!');
+                  toast.success('Receipt generated successfully!');
                 }
-              } catch (invoiceError) {
-                // Don't block the flow if invoice generation fails
+              } catch (receiptError) {
+                // Don't block the flow if receipt generation fails
               }
               
               // Save shipping address to profile for future orders
@@ -259,7 +260,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Handle COD and UPI (existing logic)
+    // Handle COD (existing logic)
     const orderItems = cartItems.map(item => ({
       product_id: item.id,
       product_name: item.name,
@@ -292,9 +293,9 @@ export default function CheckoutPage() {
         items: orderItems,
       });
 
-      // Generate invoice for COD order
+      // Generate receipt for COD order
       try {
-        const invoiceResult = await createRazorpayInvoice(
+        const receiptResult = await createCashfreeReceipt(
           order.id,
           'COD-' + Date.now(),
           formData.email,
@@ -318,19 +319,19 @@ export default function CheckoutPage() {
           }
         );
         
-        if (invoiceResult.success) {
-          // Store invoice details in the order
+        if (receiptResult.success) {
+          // Store receipt details in the order
           await supabase
             .from('orders')
             .update({
-              razorpay_invoice_id: invoiceResult.invoice_id,
-              razorpay_invoice_number: invoiceResult.invoice_number,
-              razorpay_invoice_url: invoiceResult.invoice_url,
+              cashfree_receipt_id: receiptResult.receipt_id,
+              cashfree_receipt_number: receiptResult.receipt_number,
+              cashfree_receipt_url: receiptResult.receipt_url,
             })
             .eq('id', order.id);
         }
-      } catch (invoiceError) {
-        // Don't block the flow if invoice generation fails
+      } catch (receiptError) {
+        // Don't block the flow if receipt generation fails
       }
 
       // Send order confirmation emails for COD
@@ -531,14 +532,13 @@ export default function CheckoutPage() {
                       </div>
                     </label>
 
-                    <label className={`payment-method disabled ${paymentMethod === 'upi' ? 'selected' : ''}`}>
+                    <label className={`payment-method ${paymentMethod === 'cashfree_upi' ? 'selected' : ''}`}>
                       <input
                         type="radio"
                         name="payment"
-                        value="upi"
-                        checked={paymentMethod === 'upi'}
-                        onChange={() => {}}
-                        disabled
+                        value="cashfree_upi"
+                        checked={paymentMethod === 'cashfree_upi'}
+                        onChange={() => setPaymentMethod('cashfree_upi')}
                       />
                       <div className="payment-icon upi">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -548,18 +548,17 @@ export default function CheckoutPage() {
                       </div>
                       <div className="payment-info">
                         <strong>UPI Payment</strong>
-                        <span>Temporarily unavailable</span>
+                        <span>Google Pay, PhonePe, Paytm, etc.</span>
                       </div>
                     </label>
 
-                    <label className={`payment-method disabled ${paymentMethod === 'razorpay' ? 'selected' : ''}`}>
+                    <label className={`payment-method ${paymentMethod === 'cashfree_card' ? 'selected' : ''}`}>
                       <input
                         type="radio"
                         name="payment"
-                        value="razorpay"
-                        checked={paymentMethod === 'razorpay'}
-                        onChange={() => {}}
-                        disabled
+                        value="cashfree_card"
+                        checked={paymentMethod === 'cashfree_card'}
+                        onChange={() => setPaymentMethod('cashfree_card')}
                       />
                       <div className="payment-icon card">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -569,7 +568,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="payment-info">
                         <strong>Credit / Debit Card</strong>
-                        <span>Temporarily unavailable</span>
+                        <span>Visa, Mastercard, RuPay</span>
                       </div>
                     </label>
                   </div>

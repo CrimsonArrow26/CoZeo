@@ -178,7 +178,7 @@ export default function InvoicePage() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#666' }}>Payment Method:</span>
-                  <span style={{ textTransform: 'capitalize' }}>{order.payment_method || 'Razorpay'}</span>
+                  <span style={{ textTransform: 'capitalize' }}>{order.payment_method || 'Cashfree'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#666' }}>Payment Status:</span>

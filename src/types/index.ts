@@ -47,7 +47,7 @@ export type OrderStatus =
   | 'return_requested'
   | 'returned';
 
-export type PaymentMethod = 'upi' | 'razorpay' | 'cod';
+export type PaymentMethod = 'razorpay' | 'cashfree_upi' | 'cashfree_card' | 'cod';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type CouponType = 'percentage' | 'flat' | 'free_shipping';
 
