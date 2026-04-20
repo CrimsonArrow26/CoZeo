@@ -58,22 +58,32 @@ async function supabaseFetch(table: string, options?: {
   return options?.single ? data[0] : data;
 }
 
+// Statuses that should count against stock
+// - 'pending' for COD orders (order placed, awaiting delivery)
+// - 'confirmed', 'processing', 'shipped', 'delivered' for all order types
+// Excludes: 'cancelled' and any order with payment_status = 'failed'
+const STOCK_COUNTING_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+
 // Helper to calculate remaining stock for a list of products
+// Only counts items from orders that are actually active (not cancelled/failed)
 async function calculateStockForProducts(products: (Product & { id: string; stock?: number })[]): Promise<Product[]> {
   if (!products.length) return products;
   
-  // Fetch all order items for these products
   const productIds = products.map(p => p.id);
+
+  // Join order_items with orders so we can filter by order status and payment_status
   const { data: orderItems, error } = await supabase
     .from('order_items')
-    .select('product_id, quantity')
-    .in('product_id', productIds);
+    .select('product_id, quantity, orders!inner(status, payment_status)')
+    .in('product_id', productIds)
+    .in('orders.status', STOCK_COUNTING_STATUSES)
+    .neq('orders.payment_status', 'failed');
   
   if (error) {
     // Silently handle order items fetch error
   }
   
-  // Calculate ordered quantities per product
+  // Calculate ordered quantities per product (only from active orders)
   const orderedQuantities: Record<string, number> = {};
   if (orderItems) {
     orderItems.forEach((item: { product_id: string; quantity: number }) => {
@@ -198,17 +208,20 @@ export function useProduct(slug: string) {
           throw new Error('Product not found');
         }
         
-        // Fetch order items for this product
+        // Fetch order items for this product from active orders only
+        // (exclude cancelled orders and orders with failed payments)
         const { data: orderItems, error: orderError } = await supabase
           .from('order_items')
-          .select('quantity')
-          .eq('product_id', product.id);
+          .select('quantity, orders!inner(status, payment_status)')
+          .eq('product_id', product.id)
+          .in('orders.status', STOCK_COUNTING_STATUSES)
+          .neq('orders.payment_status', 'failed');
         
         if (orderError) {
           // Silently handle order items fetch error
         }
         
-        // Calculate ordered quantity
+        // Calculate ordered quantity from active orders only
         const orderedQuantity = orderItems?.reduce((sum: number, item: { quantity: number }) => sum + (item.quantity || 0), 0) || 0;
         const totalStock = product.stock || 0;
         const remainingStock = Math.max(0, totalStock - orderedQuantity);

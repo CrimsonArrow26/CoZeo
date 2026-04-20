@@ -83,12 +83,17 @@ export function useOrders() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       
-      // Fetch orders
-      const orders = await supabaseFetch('orders', {
-        select: '*',
-        filters: { user_id: user.id },
-        order: { column: 'created_at', ascending: false }
-      }) as Order[];
+      // Fetch orders — exclude ghost orders (payment failed AND order cancelled)
+      // These are abandoned Cashfree payment attempts that should not show in history
+      const { data: ordersRaw, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .not('payment_status', 'eq', 'failed')  // hide payment-failed orders
+        .order('created_at', { ascending: false });
+      
+      if (ordersError) throw ordersError;
+      const orders = (ordersRaw || []) as Order[];
       
       // Fetch order items for all orders
       if (orders.length > 0) {

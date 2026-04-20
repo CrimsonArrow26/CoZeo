@@ -1,11 +1,10 @@
 // Cashfree integration for payments
 
 // Cashfree configuration
-const CASHFREE_ENV = import.meta.env.VITE_CASHFREE_ENV || 'sandbox';
-// Cashfree SDK - use UAT for sandbox, prod for production
-const CASHFREE_SCRIPT_URL = CASHFREE_ENV === 'production' 
-  ? 'https://sdk.cashfree.com/js/v3/cashfree.js'
-  : 'https://sdk.cashfree.com/js/v3/cashfree.uat.js';
+// Trim whitespace and any trailing comments (e.g. "sandbox  # comment" -> "sandbox")
+const CASHFREE_ENV = (import.meta.env.VITE_CASHFREE_ENV || 'sandbox').split('#')[0].trim();
+// Cashfree uses a single SDK URL; mode (sandbox/production) is set at init time
+const CASHFREE_SCRIPT_URL = 'https://sdk.cashfree.com/js/v3/cashfree.js';
 console.log('[Cashfree] Environment:', CASHFREE_ENV);
 console.log('[Cashfree] Script URL:', CASHFREE_SCRIPT_URL);
 
@@ -44,8 +43,10 @@ export function loadCashfreeScript() {
     const script = document.createElement('script');
     script.id = 'cashfree-script';
     script.src = CASHFREE_SCRIPT_URL;
-    script.defer = true;
+    // Note: `defer` is ignored on dynamically injected scripts; use `async` instead
+    script.async = true;
     script.type = 'text/javascript';
+    script.crossOrigin = 'anonymous';
     
     script.onload = () => {
       console.log('[Cashfree] Script loaded, checking for SDK...');
@@ -57,22 +58,25 @@ export function loadCashfreeScript() {
           console.log('[Cashfree] SDK initialized after', attempts, 'attempts');
           clearInterval(checkSDK);
           resolve(true);
-        } else if (attempts > 20) { // 2 seconds max
+        } else if (attempts > 30) { // 3 seconds max
           clearInterval(checkSDK);
-          console.error('[Cashfree] SDK not available after script load');
+          console.error('[Cashfree] SDK not available after script load. window.Cashfree is:', (window as any).Cashfree);
           reject(new Error('Cashfree SDK not available after script load'));
         }
       }, 100);
     };
     
     script.onerror = (e) => {
-      console.error('[Cashfree] Script failed to load:', e);
-      reject(new Error('Failed to load Cashfree script - check network/console'));
+      console.error('[Cashfree] Script failed to load. URL attempted:', CASHFREE_SCRIPT_URL, 'Error:', e);
+      // Remove the failed script tag so it can be retried
+      const failedScript = document.getElementById('cashfree-script');
+      if (failedScript) failedScript.remove();
+      reject(new Error(`Failed to load Cashfree script from ${CASHFREE_SCRIPT_URL}. Check DevTools > Network tab for the blocked request.`));
     };
     
-    // Append to body instead of head for better CORS handling
-    document.body.appendChild(script);
-    console.log('[Cashfree] Script appended to body');
+    // Append to head for script loading
+    document.head.appendChild(script);
+    console.log('[Cashfree] Script appended to head');
   });
 }
 
@@ -188,12 +192,13 @@ export async function openCashfreeCheckout({
     }
     
     // Initialize Cashfree SDK
+    // NOTE: Cashfree is called as a factory function, NOT as a constructor (no `new`)
     const CashfreeSDK = (window as any).Cashfree;
     if (!CashfreeSDK) {
       throw new Error('Cashfree SDK not loaded. Please refresh the page.');
     }
     
-    const cashfree = new CashfreeSDK({
+    const cashfree = CashfreeSDK({
       mode: CASHFREE_ENV,
     });
     
@@ -213,8 +218,8 @@ export async function openCashfreeCheckout({
         return;
       }
       
-      if (result.paymentDetails) {
-        // Payment completed - verify it
+      if (result.paymentDetails || !result.redirect) {
+        // Payment completed - verify it on our backend (our source of truth)
         try {
           const verification = await verifyCashfreePayment(
             cashfreeOrder.order_id,
@@ -223,11 +228,11 @@ export async function openCashfreeCheckout({
           
           if (verification.verified) {
             await onSuccess(
-              result.paymentDetails.paymentMessage?.paymentId || result.paymentDetails.transactionId,
+              verification.payment_id || cashfreeOrder.order_id,
               cashfreeOrder.order_id
             );
           } else {
-            onError(new Error('Payment verification failed'));
+            onError(new Error('Payment verification failed. If amount was deducted, it will be refunded.'));
           }
         } catch (error) {
           onError(error as Error);

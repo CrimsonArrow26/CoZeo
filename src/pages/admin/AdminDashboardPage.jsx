@@ -15,11 +15,17 @@ export default function AdminDashboardPage() {
   
   const [activeTab, setActiveTab] = useState('overview');
 
+  const activeOrders = orders?.filter(o => o.status !== 'cancelled') || [];
   const stats = {
-    totalOrders: orders?.length || 0,
+    // Only count non-cancelled orders
+    totalOrders: activeOrders.length,
     totalProducts: products?.length || 0,
-    totalRevenue: orders?.reduce((sum, o) => sum + (o.total || 0), 0) || 0,
-    pendingOrders: orders?.filter(o => o.status === 'pending').length || 0,
+    // Only sum revenue from paid orders
+    totalRevenue: activeOrders
+      .filter(o => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + (o.total || 0), 0),
+    // Pending = awaiting payment confirmation or delivery
+    pendingOrders: activeOrders.filter(o => o.status === 'pending').length,
   };
 
   return (
