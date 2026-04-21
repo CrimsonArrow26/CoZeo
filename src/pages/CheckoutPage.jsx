@@ -233,6 +233,27 @@ export default function CheckoutPage() {
                 }
                 return oldData;
               });
+
+              // Send order confirmation emails for Cashfree
+              try {
+                await sendOrderConfirmationEmails({
+                  customerEmail: formData.email,
+                  customerName: formData.name,
+                  orderId: updatedOrder?.display_id || order.display_id || order.id,
+                  orderDate: new Date().toLocaleDateString(),
+                  items: orderItems.map(item => ({
+                    name: item.product_name,
+                    quantity: item.quantity,
+                    price: item.total_price || item.unit_price,
+                  })),
+                  total: finalTotal,
+                  shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
+                  paymentMethod: paymentMethod === 'cashfree_card' ? 'Credit/Debit Card' : 'UPI',
+                });
+              } catch (emailError) {
+                // Don't block the flow if email fails
+              }
+
             }
             
             clearCart();

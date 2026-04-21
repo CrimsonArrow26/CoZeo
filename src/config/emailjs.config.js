@@ -23,6 +23,10 @@ export const EMAILJS_CONFIG = {
     ORDER_ADMIN_NOTIFY: 'template_gkhcc3h',        // Sent to admin
   },
   
-  // Admin email address where notifications will be sent
-  ADMIN_EMAIL: 'cozeo.enterprise@gmail.com',
+  // Admin email addresses where notifications will be sent
+  ADMIN_EMAILS: [
+    'cozeo.enterprise@gmail.com',
+    
+    // 'another.admin@example.com', // You can add more admin emails here
+  ],
 };

@@ -21,7 +21,6 @@ export async function sendJoinCoZeoEmails({ email, name = '' }) {
       throw new Error('Valid email is required');
     }
 
-    // Send welcome email to user
     const welcomePromise = emailjs.send(
       EMAILJS_CONFIG.SERVICES.COZEO_GROUP,
       EMAILJS_CONFIG.TEMPLATES.WELCOME_EMAIL,
@@ -29,32 +28,37 @@ export async function sendJoinCoZeoEmails({ email, name = '' }) {
         to_email: email,
         to_name: name || 'Valued Member',
         from_name: 'CoZeo Team',
-        reply_to: EMAILJS_CONFIG.ADMIN_EMAIL,
+        reply_to: EMAILJS_CONFIG.ADMIN_EMAILS[0],
       }
     );
 
-    // Send notification to admin
-    const adminPromise = emailjs.send(
-      EMAILJS_CONFIG.SERVICES.COZEO_GROUP,
-      EMAILJS_CONFIG.TEMPLATES.ADMIN_NOTIFICATION,
-      {
-        to_email: EMAILJS_CONFIG.ADMIN_EMAIL,
-        subscriber_email: email,
-        subscriber_name: name || 'Not provided',
-        joined_at: new Date().toLocaleString(),
-      }
+    // Send notification to all admins
+    const adminPromises = EMAILJS_CONFIG.ADMIN_EMAILS.map(adminEmail => 
+      emailjs.send(
+        EMAILJS_CONFIG.SERVICES.COZEO_GROUP,
+        EMAILJS_CONFIG.TEMPLATES.ADMIN_NOTIFICATION,
+        {
+          to_email: adminEmail,
+          subscriber_email: email,
+          subscriber_name: name || 'Not provided',
+          joined_at: new Date().toLocaleString(),
+        }
+      )
     );
 
-    // Send both emails concurrently
-    const [welcomeResult, adminResult] = await Promise.allSettled([
+    // Send all emails concurrently
+    const results = await Promise.allSettled([
       welcomePromise,
-      adminPromise
+      ...adminPromises
     ]);
+    
+    const welcomeResult = results[0];
+    const adminNotified = results.slice(1).some(r => r.status === 'fulfilled');
 
     return {
-      success: welcomeResult.status === 'fulfilled' && adminResult.status === 'fulfilled',
+      success: welcomeResult.status === 'fulfilled' && adminNotified,
       welcomeSent: welcomeResult.status === 'fulfilled',
-      adminNotified: adminResult.status === 'fulfilled',
+      adminNotified,
     };
   } catch (error) {
     throw error;
@@ -119,34 +123,53 @@ export async function sendOrderConfirmationEmails({
       }
     );
 
-    // Send order details to admin
-    const adminPromise = emailjs.send(
-      EMAILJS_CONFIG.SERVICES.ORDER_CONFIRMATION,
-      EMAILJS_CONFIG.TEMPLATES.ORDER_ADMIN_NOTIFY,
-      {
-        to_email: EMAILJS_CONFIG.ADMIN_EMAIL,
-        customer_email: customerEmail,
-        customer_name: customerName || 'Not provided',
-        order_id: orderId,
-        order_date: orderDate || new Date().toLocaleDateString(),
-        items_list: itemsList,
-        order_total: `₹${total}`,
-        shipping_address: shippingAddress,
-        payment_method: paymentMethod,
-        order_time: new Date().toLocaleString(),
-      }
+    // Send order details to all admins
+    const adminPromises = EMAILJS_CONFIG.ADMIN_EMAILS.map(adminEmail => 
+      emailjs.send(
+        EMAILJS_CONFIG.SERVICES.ORDER_CONFIRMATION,
+        EMAILJS_CONFIG.TEMPLATES.ORDER_ADMIN_NOTIFY,
+        {
+          to_email: adminEmail,
+          customer_email: customerEmail,
+          customer_name: customerName || 'Not provided',
+          order_id: orderId,
+          order_date: orderDate || new Date().toLocaleDateString(),
+          items_list: itemsList,
+          order_total: `₹${total}`,
+          shipping_address: shippingAddress,
+          payment_method: paymentMethod,
+          order_time: new Date().toLocaleString(),
+          reply_to: customerEmail,
+          from_name: 'CoZeo Store System',
+        }
+      )
     );
 
     // Send both emails concurrently
-    const [customerResult, adminResult] = await Promise.allSettled([
+    const results = await Promise.allSettled([
       customerPromise,
-      adminPromise
+      ...adminPromises
     ]);
+    
+    const customerResult = results[0];
+    const adminResults = results.slice(1);
+
+    if (customerResult.status === 'rejected') {
+      console.error('Customer email failed to send:', customerResult.reason);
+    }
+    
+    adminResults.forEach((res, index) => {
+      if (res.status === 'rejected') {
+        console.error(`Admin email failed to send to ${EMAILJS_CONFIG.ADMIN_EMAILS[index]}:`, res.reason);
+      }
+    });
+
+    const anyAdminNotified = adminResults.some(r => r.status === 'fulfilled');
 
     return {
-      success: customerResult.status === 'fulfilled' && adminResult.status === 'fulfilled',
+      success: customerResult.status === 'fulfilled' && anyAdminNotified,
       customerNotified: customerResult.status === 'fulfilled',
-      adminNotified: adminResult.status === 'fulfilled',
+      adminNotified: anyAdminNotified,
     };
   } catch (error) {
     throw error;
