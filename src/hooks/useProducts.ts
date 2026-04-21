@@ -62,7 +62,7 @@ async function supabaseFetch(table: string, options?: {
 // - 'pending' for COD orders (order placed, awaiting delivery)
 // - 'confirmed', 'processing', 'shipped', 'delivered' for all order types
 // Excludes: 'cancelled' and any order with payment_status = 'failed'
-const STOCK_COUNTING_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+const STOCK_COUNTING_STATUSES = ['pending', 'confirmed', 'packed', 'shipped', 'arrived', 'delivered'];
 
 // Helper to calculate remaining stock for a list of products
 // Only counts items from orders that are actually active (not cancelled/failed)
