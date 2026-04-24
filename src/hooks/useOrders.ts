@@ -155,7 +155,7 @@ export function useOrderItems(orderId: string) {
     queryKey: ['orderItems', orderId],
     queryFn: async () => {
       const data = await supabaseFetch('order_items', {
-        select: '*',
+        select: '*, custom_design_id, custom_notes',
         filters: { order_id: orderId }
       });
       return data as OrderItem[];
@@ -199,11 +199,56 @@ export function useCreateOrder() {
       const orderItems = items.map((item) => ({
         ...item,
         order_id: orderData.id,
+        custom_notes: item.custom_notes || null,
       }));
-      const { error: itemsError } = await supabase
+      console.log('Creating order items:', orderItems.map(i => ({ name: i.product_name, custom_notes: i.custom_notes })));
+      const { data: createdItems, error: itemsError } = await supabase
         .from('order_items')
-        .insert(orderItems);
-      if (itemsError) throw itemsError;
+        .insert(orderItems)
+        .select();
+      if (itemsError) {
+        console.error('Order items insert error:', itemsError);
+        throw itemsError;
+      }
+
+      // Handle custom designs - create custom_designs rows and link them
+      const customDesignItems = items.filter(item => item.is_custom_design && (item.custom_design_front || item.custom_design_back));
+      if (customDesignItems.length > 0 && createdItems) {
+        for (const item of customDesignItems) {
+          const createdItem = createdItems.find((ci: { product_id: string; size: string; }) => ci.product_id === item.product_id && ci.size === item.size);
+          if (createdItem && item.custom_design_front) {
+            // Create custom_design row
+            const { data: customDesign, error: customDesignError } = await supabase
+              .from('custom_designs')
+              .insert({
+                order_item_id: createdItem.id,
+                cart_item_id: null,
+                campaign_id: null,
+                user_id: order.user_id,
+                image_url: item.custom_design_front,
+                preview_url: item.custom_design_back || null,
+                status: 'pending',
+                admin_notes: null,
+              })
+              .select()
+              .single();
+            
+            if (customDesignError) {
+              console.error('Failed to create custom_design:', customDesignError);
+            } else if (customDesign) {
+              // Update order_item with custom_design_id
+              const { error: updateError } = await supabase
+                .from('order_items')
+                .update({ custom_design_id: customDesign.id })
+                .eq('id', createdItem.id);
+              
+              if (updateError) {
+                console.error('Failed to update order_item with custom_design_id:', updateError);
+              }
+            }
+          }
+        }
+      }
 
       return orderData as Order;
     },

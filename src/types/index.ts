@@ -81,6 +81,14 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  // Custom design fields
+  is_custom_design?: boolean;
+  custom_design_id?: string | null;
+  custom_design_front?: string | null;
+  custom_design_back?: string | null;
+  apparel_type?: 'hoodie' | 'tshirt' | null;
+  print_location?: 'front' | 'back' | 'both' | null;
+  custom_notes?: string | null;
 }
 
 export interface Order {
@@ -168,6 +176,49 @@ export interface ReturnRequest {
   resolution: 'refund' | 'replacement';
   status: 'requested' | 'approved' | 'rejected' | 'completed';
   admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  badge: string | null;
+  combo_price: number;
+  original_total: number;
+  starts_at: string;
+  ends_at: string;
+  is_active: boolean;
+  max_uses: number | null;
+  current_uses: number;
+  requires_custom_design: boolean;
+  custom_design_label: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignProduct {
+  id: string;
+  campaign_id: string;
+  product_id: string;
+  min_quantity: number;
+  is_custom_design_slot: boolean;
+  sort_order: number;
+  product?: Product;
+}
+
+export interface CustomDesign {
+  id: string;
+  order_item_id: string | null;
+  cart_item_id: string | null;
+  campaign_id: string;
+  user_id: string;
+  image_url: string;
+  preview_url: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes: string | null;
   created_at: string;
   updated_at: string;
 }

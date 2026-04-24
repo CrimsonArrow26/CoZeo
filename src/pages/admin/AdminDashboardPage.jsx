@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useOrders } from '../../hooks/useOrders';
 import { useProducts } from '../../hooks/useProducts';
 import { formatPrice } from '../../lib/utils';
-import { Package, Users, ShoppingBag, DollarSign, Tag } from 'lucide-react';
+import { Package, Users, ShoppingBag, DollarSign, Tag, Megaphone } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -64,6 +64,10 @@ export default function AdminDashboardPage() {
                 <Link to="/admin/coupons" className="nav-item">
                   <Tag size={18} />
                   Coupons
+                </Link>
+                <Link to="/admin/campaigns" className="nav-item">
+                  <Megaphone size={18} />
+                  Campaigns
                 </Link>
               </nav>
             </aside>

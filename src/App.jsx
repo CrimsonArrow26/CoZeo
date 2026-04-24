@@ -19,13 +19,16 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminProductEditPage from './pages/admin/AdminProductEditPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage';
 import AdminCouponsPage from './pages/admin/AdminCouponsPage';
+import AdminCampaignsPage from './pages/admin/AdminCampaignsPage';
 import AdminRoute from './components/AdminRoute';
 import { Toaster } from 'sonner';
 
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import InvoicePage from './pages/InvoicePage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import CampaignPage, { CustomDesignPage } from './pages/CampaignPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import RefundPage from './pages/RefundPage';
@@ -65,6 +68,8 @@ function AppContent() {
       <Route path="/orders/:id/invoice" element={<InvoicePage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/giveaway" element={<GiveawayPage />} />
+      <Route path="/campaign/:slug" element={<CampaignPage />} />
+      <Route path="/custom-design/:slug" element={<CustomDesignPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
@@ -77,7 +82,9 @@ function AppContent() {
       <Route path="/admin/products/new" element={<AdminRoute><AdminProductEditPage /></AdminRoute>} />
       <Route path="/admin/products/:id/edit" element={<AdminRoute><AdminProductEditPage /></AdminRoute>} />
       <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+      <Route path="/admin/orders/:id" element={<AdminRoute><AdminOrderDetailsPage /></AdminRoute>} />
       <Route path="/admin/coupons" element={<AdminRoute><AdminCouponsPage /></AdminRoute>} />
+      <Route path="/admin/campaigns" element={<AdminRoute><AdminCampaignsPage /></AdminRoute>} />
     </Routes>
     <GoToTop />
     <ChatWidget />

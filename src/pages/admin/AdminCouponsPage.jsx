@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Tag, Trash2, Edit2, Check, X } from 'lucide-react';
+import Header from '../../components/Header';
 import { useCoupons, useCreateCoupon, useUpdateCoupon, useDeleteCoupon } from '../../hooks/useCoupons';
 import { formatPrice } from '../../lib/utils';
 import { toast } from 'sonner';
@@ -103,37 +104,10 @@ export default function AdminCouponsPage() {
   };
 
   return (
-    <div className="admin-layout">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="admin-user">
-          <div className="user-avatar admin">
-            <Tag size={24} />
-          </div>
-          <div className="user-info">
-            <p className="user-name">Coupons</p>
-            <p className="user-email">Manage discounts</p>
-          </div>
-        </div>
-
-        <nav className="admin-nav">
-          <Link to="/admin" className="nav-item">
-            Dashboard
-          </Link>
-          <Link to="/admin/products" className="nav-item">
-            Products
-          </Link>
-          <Link to="/admin/orders" className="nav-item">
-            Orders
-          </Link>
-          <Link to="/admin/coupons" className="nav-item active">
-            Coupons
-          </Link>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <div className="admin-content">
+    <div className="page-wrapper">
+      <Header />
+      <div className="section _100px">
+        <div className="container">
         <div className="admin-header">
           <div>
             <Link to="/admin" className="back-link">
@@ -362,6 +336,7 @@ export default function AdminCouponsPage() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

@@ -54,6 +54,7 @@ export function CartProvider({ children }) {
       setIsSyncing(true);
       try {
         const items = await fetchUserCart();
+        console.log('[DEBUG CartContext] loadCart fetched items:', items.map(i => ({ id: i.id, product_id: i.product_id, custom_notes: i.custom_notes })));
         setDbCartItems(items);
         // Convert DB items to local format
         const localFormatItems = items.map(item => ({
@@ -68,6 +69,13 @@ export function CartProvider({ children }) {
           images: item.product?.images || [],
           maxStock: item.product?.stock || 10,
           slug: item.product?.slug,
+          // Preserve custom design fields
+          is_custom_design: item.is_custom_design,
+          custom_design_front: item.custom_design_front,
+          custom_design_back: item.custom_design_back,
+          apparel_type: item.apparel_type,
+          print_location: item.print_location,
+          custom_notes: item.custom_notes,
         })).filter(item => item.id && item.name); // Only include items with valid product data
         setCartItems(localFormatItems);
       } catch (err) {
@@ -128,6 +136,7 @@ export function CartProvider({ children }) {
 
   // Add to cart
   const addToCart = async (product, size = 'M', qty = 1, color = null) => {
+    console.log('[DEBUG CartContext] addToCart called with:', { id: product.id, name: product.name, custom_notes: product.custom_notes, is_custom_design: product.is_custom_design });
     if (user?.id) {
       // Logged in user - add to database
       setIsSyncing(true);
@@ -141,37 +150,51 @@ export function CartProvider({ children }) {
           // Update quantity
           await updateCartItemDB(existingItem.id, existingItem.quantity + qty);
         } else {
-          // Add new item
-          await addCartItemDB(String(product.id), size, qty, color);
+          // Add new item with custom design fields if present
+          const customDesignFields = product.is_custom_design ? {
+            is_custom_design: product.is_custom_design,
+            custom_design_front: product.custom_design_front || null,
+            custom_design_back: product.custom_design_back || null,
+            apparel_type: product.apparel_type || null,
+            print_location: product.print_location || null,
+            custom_notes: product.custom_notes || null,
+          } : undefined;
+          console.log('[DEBUG CartContext] customDesignFields:', customDesignFields);
+          await addCartItemDB(String(product.id), size, qty, color, customDesignFields);
         }
         
         // Reload cart from database
         await loadCart();
       } catch (err) {
-        // Silently fail - cart operation is non-critical
+        console.error('[DEBUG CartContext] Error adding to cart:', err);
       } finally {
         setIsSyncing(false);
       }
     } else {
-      // Guest user - add to local state
-      setCartItems(prev => {
-        const existing = prev.find(i => i.id === product.id && i.size === size);
+      // Guest user - add to local state and save immediately
+      const newCartItems = (() => {
+        const existing = cartItems.find(i => i.id === product.id && i.size === size);
         if (existing) {
-          return prev.map(i => 
+          return cartItems.map(i => 
             i.id === product.id && i.size === size 
               ? { ...i, qty: Math.min(i.qty + qty, 10) } 
               : i
           );
         }
-        return [...prev, { 
+        const newItem = { 
           ...product, 
           size, 
           qty,
           color,
           originalPrice: product.price,
           maxStock: product.stock || 10
-        }];
-      });
+        };
+        console.log('[DEBUG CartContext] Guest cart newItem:', { id: newItem.id, name: newItem.name, custom_notes: newItem.custom_notes });
+        return [...cartItems, newItem];
+      })();
+      setCartItems(newCartItems);
+      // Save immediately to localStorage for Buy Now redirect
+      localStorage.setItem(GUEST_CART_KEY, JSON.stringify(newCartItems));
     }
     setCartOpen(true);
   };
@@ -197,6 +220,38 @@ export function CartProvider({ children }) {
     } else {
       // Guest user - remove from local state
       setCartItems(prev => prev.filter(i => !(i.id === id && i.size === size)));
+    }
+  };
+
+  // Update custom design for a cart item
+  const updateCartItemCustomDesign = async (id, size, customDesign) => {
+    if (user?.id) {
+      // Logged in user - update in database (custom_design is stored in metadata or separate table)
+      const cartItem = dbCartItems.find(
+        item => item.product?.id === id && item.size === size
+      );
+      if (cartItem) {
+        setIsSyncing(true);
+        try {
+          // Update local state with custom design
+          setCartItems(prev => prev.map(i => 
+            i.id === id && i.size === size 
+              ? { ...i, custom_design: customDesign } 
+              : i
+          ));
+        } catch {
+          // Silently fail
+        } finally {
+          setIsSyncing(false);
+        }
+      }
+    } else {
+      // Guest user - update local state
+      setCartItems(prev => prev.map(i => 
+        i.id === id && i.size === size 
+          ? { ...i, custom_design: customDesign } 
+          : i
+      ));
     }
   };
 
@@ -265,6 +320,7 @@ export function CartProvider({ children }) {
       addToCart, 
       removeFromCart, 
       updateQty, 
+      updateCartItemCustomDesign,
       clearCart,
       totalItems, 
       subtotal,

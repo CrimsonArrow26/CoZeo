@@ -4531,7 +4531,7 @@ a {
 }
 
 .page-title {
-    color: var(--light);
+    color: var(--dark);
     font-size: 80px;
     font-weight: var(--_font-weight---regular);
     text-transform: uppercase;

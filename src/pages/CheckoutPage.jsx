@@ -7,6 +7,7 @@ import { useCart } from '../CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCreateOrder } from '../hooks/useOrders';
 import { useValidateCoupon } from '../hooks/useCoupons';
+import { useCartCampaign } from '../hooks/useCartCampaign';
 import { formatPrice } from '../lib/utils';
 import { openCashfreeCheckout, createCashfreeReceipt } from '../lib/cashfree';
 import { sendOrderConfirmationEmails } from '../services/email.service';
@@ -43,6 +44,9 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const validateCoupon = useValidateCoupon();
+  
+  // Campaign discount detection
+  const { campaign, campaignSavings, campaignTotal } = useCartCampaign(cartItems);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -69,8 +73,10 @@ export default function CheckoutPage() {
     toast.info('Coupon removed');
   };
 
-  const discountAmount = appliedCoupon ? Math.round(subtotal * (appliedCoupon.discount_percentage / 100)) : 0;
-  const finalTotal = subtotal - discountAmount;
+  const discountAmount = appliedCoupon 
+    ? Math.round(subtotal * (appliedCoupon.discount_percentage / 100)) 
+    : campaignSavings || 0;
+  const finalTotal = campaignTotal || (subtotal - discountAmount);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -116,6 +122,14 @@ export default function CheckoutPage() {
           quantity: item.qty,
           unit_price: item.price,
           total_price: item.price * item.qty,
+          // Custom design fields
+          is_custom_design: item.is_custom_design || false,
+          custom_design_id: item.custom_design_id || null,
+          custom_design_front: item.custom_design_front || null,
+          custom_design_back: item.custom_design_back || null,
+          apparel_type: item.apparel_type || null,
+          print_location: item.print_location || null,
+          custom_notes: item.custom_notes || null,
         }));
 
         const order = await createOrder.mutateAsync({
@@ -124,6 +138,7 @@ export default function CheckoutPage() {
             subtotal,
             discount_amount: discountAmount,
             coupon_code: appliedCoupon?.code || null,
+            campaign_id: !appliedCoupon && campaign ? campaign.id : null,
             total: finalTotal,
             payment_method: paymentMethod,
             payment_status: 'pending',
@@ -282,6 +297,7 @@ export default function CheckoutPage() {
     }
 
     // Handle COD (existing logic)
+    console.log('[DEBUG] Cart items before mapping:', cartItems.map(i => ({ id: i.id, name: i.name, is_custom_design: i.is_custom_design, custom_design_front: i.custom_design_front, custom_notes: i.custom_notes })));
     const orderItems = cartItems.map(item => ({
       product_id: item.id,
       product_name: item.name,
@@ -291,7 +307,15 @@ export default function CheckoutPage() {
       quantity: item.qty,
       unit_price: item.price,
       total_price: item.price * item.qty,
+      // Custom design fields
+      is_custom_design: item.is_custom_design || false,
+      custom_design_front: item.custom_design_front || null,
+      custom_design_back: item.custom_design_back || null,
+      apparel_type: item.apparel_type || null,
+      print_location: item.print_location || null,
+      custom_notes: item.custom_notes || null,
     }));
+    console.log('[DEBUG] Order items after mapping:', orderItems.map(i => ({ name: i.product_name, is_custom_design: i.is_custom_design, custom_design_front: i.custom_design_front, custom_notes: i.custom_notes })));
 
     try {
       const order = await createOrder.mutateAsync({
@@ -300,6 +324,7 @@ export default function CheckoutPage() {
           subtotal,
           discount_amount: discountAmount,
           coupon_code: appliedCoupon?.code || null,
+          campaign_id: !appliedCoupon && campaign ? campaign.id : null,
           total: finalTotal,
           payment_method: paymentMethod,
           shipping_name: formData.name,
@@ -681,6 +706,16 @@ export default function CheckoutPage() {
                   <div className="order-row discount">
                     <span>Discount ({appliedCoupon.discount_percentage}%)</span>
                     <span className="discount-amount">-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
+                
+                {!appliedCoupon && campaign && (
+                  <div className="order-row discount campaign-discount">
+                    <span>
+                      <span className="campaign-badge">Campaign</span>
+                      {campaign.name}
+                    </span>
+                    <span className="discount-amount">-{formatPrice(campaignSavings)}</span>
                   </div>
                 )}
                 

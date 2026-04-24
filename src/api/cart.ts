@@ -11,6 +11,12 @@ export interface CartItemDB {
   size: string;
   color: string | null;
   quantity: number;
+  is_custom_design?: boolean;
+  custom_design_front?: string | null;
+  custom_design_back?: string | null;
+  apparel_type?: 'hoodie' | 'tshirt' | null;
+  print_location?: 'front' | 'back' | 'both' | null;
+  custom_notes?: string | null;
   created_at: string;
   updated_at: string;
   product?: {
@@ -42,7 +48,15 @@ export async function addCartItem(
   productId: string, 
   size: string, 
   quantity: number = 1,
-  color?: string
+  color?: string,
+  customDesignFields?: {
+    is_custom_design?: boolean;
+    custom_design_front?: string | null;
+    custom_design_back?: string | null;
+    apparel_type?: 'hoodie' | 'tshirt' | null;
+    print_location?: 'front' | 'back' | 'both' | null;
+    custom_notes?: string | null;
+  }
 ): Promise<CartItemDB> {
   const { data, error } = await supabase
     .from('cart_items')
@@ -51,6 +65,7 @@ export async function addCartItem(
       size,
       quantity,
       color: color || null,
+      ...customDesignFields,
     })
     .select('*, product:products(id, name, slug, price, discount_price, images, stock)')
     .single();

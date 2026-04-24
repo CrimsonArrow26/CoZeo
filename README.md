@@ -1,180 +1,94 @@
-# CoZeo - Velora Streetwear E-commerce
+# CoZeo - Streetwear E-commerce
 
-A full-stack e-commerce application built with React, Vite, and Supabase. Based on the Velora Webflow template design with added backend functionality.
+**CoZeo** is a full-stack streetwear e-commerce platform built with React, Vite, and Supabase. It features custom apparel design uploads, campaign/combo deals, order management, and an admin dashboard.
+
+**[Live Site →](https://cozeo.vercel.app)**
 
 ## Features
 
-- **Authentication**: Email/password login with Supabase Auth (modal-based like Velora)
-- **Product Management**: Products with sizes, colors, badges (Sale/Drop/New), and specs
-- **Shopping Cart**: Slide-out cart drawer with add/remove functionality
-- **Checkout Flow**: Multi-step checkout with shipping and payment
-- **Order Tracking**: Track orders with status updates
-- **User Dashboard**: Profile management, order history, notifications
-- **Giveaway System**: Entry form with image upload
-- **Responsive Design**: Mobile-first, preserves Velora's original styling
+- **Custom Apparel Design** — Upload your own artwork on hoodies & t-shirts with front/back print options
+- **Campaign Combo Deals** — Bundle products at discounted combo prices with required custom design uploads
+- **Authentication** — Email/password & Google OAuth via Supabase Auth
+- **Product Catalog** — Products with sizes, colors, badges (Sale/Drop/New), and specs
+- **Shopping Cart** — Slide-out cart drawer with real-time updates
+- **Checkout** — Multi-step checkout with Cashfree payment integration
+- **Order Tracking** — Public order tracking with status timeline
+- **User Dashboard** — Profile management, order history, notifications
+- **Admin Panel** — Order management, campaign management, coupon management, dashboard analytics
+- **Responsive Design** — Mobile-first, preserves Velora's original styling
 
 ## Tech Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Frontend**: React 18, Vite
+- **Backend**: Supabase (PostgreSQL + Auth + Storage + Edge Functions)
 - **State Management**: TanStack Query v5, React Context
-- **Forms**: React Hook Form with Zod validation
-- **UI Components**: shadcn/ui components
+- **Payment**: Cashfree Payments
 - **Icons**: Lucide React
-- **Notifications**: Sonner toast
-
-## Setup Instructions
-
-### 1. Clone and Install
-
-```bash
-cd velora-react
-npm install
-```
-
-### 2. Supabase Setup
-
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to the SQL Editor and run the schema from `supabase/schema.sql`
-3. Enable Storage buckets: `product-images`, `avatars`, `giveaway-entries`, `return-images`
-4. Get your project URL and anon key from Settings > API
-
-### 3. Environment Variables
-
-Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_RAZORPAY_KEY_ID=rzp_test_xxxxx
-VITE_APP_URL=http://localhost:5173
-VITE_APP_NAME=CoZeo
-VITE_UPI_ID=cozeo@upi
-```
-
-### 4. Run Development Server
-
-```bash
-npm run dev
-```
-
-Visit `http://localhost:5173`
-
-## Database Schema
-
-The schema includes:
-
-- **profiles**: User profiles linked to auth.users
-- **user_roles**: Admin/customer role management
-- **products**: Full product catalog with specs, sizes, colors
-- **orders**: Order management with status history
-- **order_items**: Line items for each order
-- **coupons**: Discount codes
-- **giveaway_entries**: Contest entries
-- **returns**: Return request management
-- **notifications**: User notifications
-
-See `supabase/schema.sql` for complete schema with RLS policies.
+- **Notifications**: React Hot Toast
+- **Deployment**: Vercel
 
 ## Project Structure
 
 ```
 src/
-├── components/          # React components
-│   ├── Header.jsx      # Navigation with auth modal
-│   ├── ProductSection.jsx
-│   ├── FeaturedSection.jsx
-│   ├── DealSection.jsx
+├── api/                  # API functions (cart)
+├── components/           # React components
+│   ├── Header.jsx        # Navigation with cart sidebar & auth
+│   ├── CampaignCard.jsx  # Campaign product cards
+│   ├── CustomDesignUploader.jsx
 │   └── ...
-├── pages/              # Route pages
+├── pages/                # Route pages
 │   ├── HomePage.jsx
 │   ├── ShopPage.jsx
-│   ├── ProductPage.jsx
-│   ├── CategoryPage.jsx
+│   ├── ProductPage.jsx   # Product detail with custom design
+│   ├── CampaignPage.jsx  # Campaign combo deals
 │   ├── CheckoutPage.jsx
+│   ├── OrderTrackingPage.jsx
 │   ├── DashboardPage.jsx
-│   ├── GiveawayPage.jsx
-│   └── OrderTrackingPage.jsx
-├── hooks/              # Custom React hooks
-│   ├── useProducts.ts  # Product data fetching
-│   └── useOrders.ts    # Order management
-├── contexts/           # React contexts
-│   └── AuthContext.tsx # Authentication state
-├── integrations/
-│   └── supabase/
-│       └── client.ts   # Supabase client setup
-├── types/              # TypeScript types
-│   └── index.ts
-├── lib/                # Utilities
-│   └── utils.ts        # formatPrice, formatDate
-└── providers/
-    └── QueryProvider.tsx # TanStack Query setup
+│   └── admin/            # Admin pages
+│       ├── AdminDashboardPage.jsx
+│       ├── AdminOrdersPage.jsx
+│       ├── AdminOrderDetailsPage.jsx
+│       ├── AdminCampaignsPage.jsx
+│       └── AdminCouponsPage.jsx
+├── hooks/                # Custom React hooks
+│   ├── useProducts.ts
+│   ├── useOrders.ts
+│   ├── useCampaigns.js
+│   └── useCartCampaign.js
+├── CartContext.jsx       # Cart state management
+├── integrations/supabase/
+│   └── client.ts        # Supabase client setup
+├── types/index.ts        # TypeScript types
+└── lib/utils.ts          # Utility functions
 ```
 
-## Pages
+## Key Routes
 
 | Route | Description |
 |-------|-------------|
-| `/` | Home page with all sections |
-| `/shop` | Full product catalog with filters |
-| `/product/:slug` | Product detail with tabs |
-| `/category/:slug` | Category filtered products |
+| `/` | Home page |
+| `/shop` | Product catalog with filters |
+| `/product/:slug` | Product detail with custom design upload |
+| `/campaign/:slug` | Campaign combo deal page |
 | `/checkout` | Multi-step checkout |
-| `/order-confirmation/:id` | Order success page |
+| `/order-confirmation/:id` | Order success |
 | `/orders/:id/track` | Order tracking (public) |
 | `/dashboard` | User dashboard |
-| `/giveaway` | Giveaway entry form |
+| `/admin` | Admin panel |
 
-## Key Features Implemented
+## Setup
 
-- ✅ Supabase client with environment variables
-- ✅ TypeScript types for all entities
-- ✅ Utility functions (formatPrice, formatDate)
-- ✅ TanStack Query provider setup
-- ✅ Complete schema with RLS policies
-- ✅ Seed data with 6 sample products
-- ✅ AuthContext with Supabase integration
-- ✅ Login/Signup modal in Header
-- ✅ User dropdown with Dashboard/Sign Out
-- ✅ Shop page with filters
-- ✅ Product detail with size/color selection
-- ✅ Category pages
-- ✅ Checkout with 2-step flow
-- ✅ Order confirmation
-- ✅ Order tracking
-- ✅ Dashboard with profile/orders/notifications tabs
-- ✅ Giveaway page with form
-- ✅ Cart drawer integration
-- ✅ ProductSection uses Supabase (new drops)
-- ✅ FeaturedSection uses Supabase (featured products)
-- ✅ DealSection uses Supabase (spotlight product)
-
-## Styling Notes
-
-The project preserves Velora's original CSS:
-- Uses `velora.css` for main styles
-- Custom animations in `index.css`
-- No Tailwind classes were added to existing components (except new pages)
-- Fonts remain unchanged as requested
+1. Clone and install: `npm install`
+2. Create a Supabase project and run migrations
+3. Copy `.env.example` to `.env.local` and add credentials
+4. Run: `npm run dev`
 
 ## Commands
 
 ```bash
-# Development
-npm run dev
-
-# Build
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint
-npm run lint
+npm run dev       # Development server
+npm run build     # Production build
+npm run preview   # Preview production build
+npm run lint      # Lint
 ```

@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import { Footer } from '../components/SubscribeFooter';
 import { useOrder, useOrderItems } from '../hooks/useOrders';
 import { formatPrice, formatDate } from '../lib/utils';
-import { CheckCircle, Package, Truck, Home, MapPin, ClipboardCheck, Clock } from 'lucide-react';
+import { CheckCircle, Package, Truck, Home, MapPin, ClipboardCheck, Clock, Palette, Image } from 'lucide-react';
 
 const STAGES = [
   { key: 'confirmed', label: 'Confirmed', icon: ClipboardCheck },
@@ -18,7 +18,20 @@ export default function OrderTrackingPage() {
   const location = useLocation();
   const { data: order, isLoading } = useOrder(id || '');
   const { data: orderItems } = useOrderItems(id || '');
-  
+
+  // Debug: Log order items to verify custom design data
+  console.log('OrderTrackingPage - orderItems:', orderItems);
+  if (orderItems?.length > 0) {
+    orderItems.forEach((item, i) => {
+      console.log(`Item ${i}:`, {
+        name: item.product_name,
+        isCustom: item.is_custom_design,
+        front: item.custom_design_front?.slice(0, 50),
+        back: item.custom_design_back?.slice(0, 50)
+      });
+    });
+  }
+
   // Check if user came from admin orders
   const fromAdmin = location.state?.from === 'admin';
 
@@ -123,13 +136,50 @@ export default function OrderTrackingPage() {
                 <h3>Items</h3>
                 <div className="tracking-items">
                   {orderItems?.map(item => (
-                    <div key={item.id} className="tracking-item">
+                    <div key={item.id} className={`tracking-item ${item.is_custom_design ? 'custom-design-item' : ''}`}>
                       <img src={item.product_image} alt={item.product_name} />
                       <div className="item-info">
                         <p className="item-name">{item.product_name}</p>
                         <p className="item-meta">Size: {item.size} | Color: {item.color} × {item.quantity}</p>
+                        {item.is_custom_design && (
+                          <div className="custom-design-badge">
+                            <Palette size={14} />
+                            Custom {item.apparel_type === 'hoodie' ? 'Hoodie' : 'T-Shirt'}
+                            {item.print_location && (
+                              <span> • {item.print_location === 'both' ? 'Front + Back' : item.print_location}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <span className="item-price">{formatPrice(item.total_price)}</span>
+                      
+                      {/* Custom Design Images */}
+                      {item.is_custom_design && (item.custom_design_front || item.custom_design_back) && (
+                        <div className="custom-designs-preview">
+                          {item.custom_design_front && (
+                            <div className="design-preview">
+                              <span className="design-label">Front</span>
+                              <img 
+                                src={item.custom_design_front} 
+                                alt="Front design"
+                                className="design-image"
+                                onClick={() => window.open(item.custom_design_front, '_blank')}
+                              />
+                            </div>
+                          )}
+                          {item.custom_design_back && (
+                            <div className="design-preview">
+                              <span className="design-label">Back</span>
+                              <img 
+                                src={item.custom_design_back} 
+                                alt="Back design"
+                                className="design-image"
+                                onClick={() => window.open(item.custom_design_back, '_blank')}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

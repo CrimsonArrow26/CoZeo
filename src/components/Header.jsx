@@ -1,12 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useCartCampaign } from '../hooks/useCartCampaign';
 import { formatPrice } from '../lib/utils';
 import { toast } from 'sonner';
+import CustomDesignUploader from './CustomDesignUploader';
 
 function CartSidebar({ onClose }) {
-  const { cartItems, removeFromCart, updateQty, subtotal } = useCart();
+  const { cartItems, removeFromCart, updateQty, updateCartItemCustomDesign, subtotal } = useCart();
+  const { campaign } = useCartCampaign(cartItems);
+  const cartContainerRef = useRef(null);
+  
+  // Check if item is part of an active campaign
+  const isCampaignItem = (itemId) => {
+    if (!campaign) return false;
+    const campaignProducts = campaign.campaign_products || [];
+    return campaignProducts.some(cp => cp.product_id === itemId && !cp.is_custom_design_slot);
+  };
   
   // Handle backdrop click
   const handleBackdropClick = (e) => {
@@ -14,10 +25,28 @@ function CartSidebar({ onClose }) {
       onClose();
     }
   };
+
+  // Prevent scroll events from bubbling to body
+  useEffect(() => {
+    const container = cartContainerRef.current;
+    if (!container) return;
+
+    const preventScroll = (e) => {
+      e.stopPropagation();
+    };
+
+    container.addEventListener('wheel', preventScroll, { passive: false });
+    container.addEventListener('touchmove', preventScroll, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', preventScroll);
+      container.removeEventListener('touchmove', preventScroll);
+    };
+  }, []);
   
   return (
     <div className="w-commerce-commercecartcontainerwrapper w-commerce-commercecartcontainerwrapper--cartType-rightSidebar" style={{ display: 'flex' }} onClick={handleBackdropClick}>
-      <div className="w-commerce-commercecartcontainer" role="dialog" onClick={(e) => e.stopPropagation()}>
+      <div ref={cartContainerRef} className="w-commerce-commercecartcontainer" role="dialog" onClick={(e) => e.stopPropagation()}>
         <div className="w-commerce-commercecartheader">
           <h3 className="w-commerce-commercecartheading cart-title">Your Cart</h3>
           <a className="w-commerce-commercecartcloselink close-button w-inline-block" role="button" onClick={onClose}>
@@ -34,9 +63,13 @@ function CartSidebar({ onClose }) {
               <div className="w-commerce-commercecartlist">
                 {cartItems.map(item => (
                   <div key={`${item.id}-${item.size}`} className="w-commerce-commercecartitem cart-item">
-                    <img src={item.images?.[0] || '/images/placeholder.jpg'} alt={item.name} className="w-commerce-commercecartitemimage" />
+                    <Link to={`/product/${item.slug || item.id}`} className="w-commerce-commercecartitemimage-link">
+                      <img src={item.images?.[0] || '/images/placeholder.jpg'} alt={item.name} className="w-commerce-commercecartitemimage" />
+                    </Link>
                     <div className="w-commerce-commercecartiteminfo">
-                      <div className="w-commerce-commercecartproductname cart-product-title">{item.name}</div>
+                      <Link to={`/product/${item.slug || item.id}`} className="w-commerce-commercecartproductname cart-product-title">
+                        {item.name}
+                      </Link>
                       <div className="cart-price">{formatPrice(item.price * item.qty)}</div>
                       <ul className="w-commerce-commercecartoptionlist">
                         <li className="cart-size"><span>Size: {item.size}</span></li>
@@ -44,6 +77,18 @@ function CartSidebar({ onClose }) {
                       <a href="#" className="cart-product-remove w-inline-block" onClick={e => { e.preventDefault(); removeFromCart(item.id, item.size); }}>
                         <div className="cart-remove">Remove</div>
                       </a>
+                      
+                      {/* Custom Design Upload for Campaign Items */}
+                      {isCampaignItem(item.id) && campaign?.campaign_products?.some(cp => cp.is_custom_design_slot) && (
+                        <div className="cart-custom-design">
+                          <CustomDesignUploader
+                            label="Upload Custom Design"
+                            existingImage={item.custom_design?.url}
+                            onUploadComplete={(design) => updateCartItemCustomDesign(item.id, item.size, design)}
+                            onClear={() => updateCartItemCustomDesign(item.id, item.size, null)}
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="cart-quantity-wrapper">
                       <div className="quantity-stepper">

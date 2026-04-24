@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { Footer } from '../components/SubscribeFooter';
 import { useProducts } from '../hooks/useProducts';
@@ -68,6 +68,7 @@ export default function ShopPage() {
   const [sizeModalProduct, setSizeModalProduct] = useState(null);
   const { data: products, isLoading, error } = useProducts(filters);
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -239,7 +240,14 @@ export default function ShopPage() {
                         </div>
                         <button 
                           className="add-to-cart-btn"
-                          onClick={() => setSizeModalProduct(product)}
+                          onClick={() => {
+                            // Check if custom apparel - redirect to product page for design upload
+                            if (product.slug === 'custom-design-apparel') {
+                              navigate(`/product/${product.slug}`);
+                            } else {
+                              setSizeModalProduct(product);
+                            }
+                          }}
                           disabled={product.stock === 0}
                           style={{ opacity: product.stock === 0 ? 0.5 : 1, cursor: product.stock === 0 ? 'not-allowed' : 'pointer' }}
                         >
