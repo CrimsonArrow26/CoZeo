@@ -292,6 +292,36 @@ export default function CheckoutPage() {
         });
       } catch (error) {
         toast.error('Failed to initiate payment. Please try again.');
+        return;
+      }
+      return;
+    }
+
+    // Handle COD (existing logic)
+    const orderItems = cartItems.map(item => ({
+      product_id: item.id,
+      product_name: item.name,
+      product_image: item.images?.[0] || '/images/placeholder.jpg',
+      size: item.size,
+      color: item.color || 'Black',
+      quantity: item.qty,
+      unit_price: item.price,
+      total_price: item.price * item.qty,
+      // Custom design fields
+      is_custom_design: item.is_custom_design || false,
+      custom_design_front: item.custom_design_front || null,
+      custom_design_back: item.custom_design_back || null,
+      apparel_type: item.apparel_type || null,
+      print_location: item.print_location || null,
+      custom_notes: item.custom_notes || null,
+    }));
+
+    try {
+      const order = await createOrder.mutateAsync({
+        order: {
+          user_id: user.id,
+          subtotal,
+          discount_amount: discountAmount,
           coupon_code: appliedCoupon?.code || null,
           campaign_id: !appliedCoupon && campaign ? campaign.id : null,
           total: finalTotal,
