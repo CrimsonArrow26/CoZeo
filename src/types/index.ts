@@ -12,6 +12,11 @@ export interface ProductSpecs {
   care_instructions?: string;
 }
 
+export interface ImageColorMapping {
+  image_url: string;
+  color: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -34,6 +39,7 @@ export interface Product {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  image_color_mappings?: ImageColorMapping[];
 }
 
 export type OrderStatus =

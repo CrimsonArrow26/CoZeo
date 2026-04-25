@@ -5,9 +5,10 @@ import { Footer } from '../components/SubscribeFooter';
 import { useCart } from '../CartContext';
 import { useProduct } from '../hooks/useProducts';
 import { useCampaign } from '../hooks/useCampaigns';
+import { useCustomDesignApparelTypes, useApparelBasePrices, useApparelPrintPrices } from '../hooks/useAppSettings';
 import { formatPrice } from '../lib/utils';
 import ChatWidget from '../components/ChatWidget';
-import { Star, Upload, CheckCircle, ArrowLeft, Sparkles } from 'lucide-react';
+import { Star, Upload, CheckCircle, ArrowLeft, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../integrations/supabase/client';
 
@@ -18,6 +19,9 @@ export default function ProductPage() {
   const campaignSlug = searchParams.get('campaign');
   const { data: product, isLoading, error } = useProduct(slug || '');
   const { data: campaign } = useCampaign(campaignSlug || '');
+  const { data: apparelTypes = ['hoodie'] } = useCustomDesignApparelTypes();
+  const { data: basePrices = { hoodie: 999, tshirt: 499 } } = useApparelBasePrices();
+  const { data: printPrices = { single: 299, both: 598 } } = useApparelPrintPrices();
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('M');
@@ -34,6 +38,24 @@ export default function ProductPage() {
   const [backPreview, setBackPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [customNotes, setCustomNotes] = useState(''); // User notes for design placement
+  
+  // Set default apparel type based on available types
+  useEffect(() => {
+    if (apparelTypes.length > 0 && !apparelTypes.includes(apparelType)) {
+      setApparelType(apparelTypes[0]);
+    }
+  }, [apparelTypes, apparelType]);
+
+  // Reset selected image when color changes and notify if no images
+  useEffect(() => {
+    setSelectedImage(0);
+    if (selectedColor && displayProduct?.image_color_mappings?.length) {
+      const hasImages = displayProduct.image_color_mappings.some(m => m.color === selectedColor && m.color !== '');
+      if (!hasImages) {
+        toast.info(`No images available for ${selectedColor}`);
+      }
+    }
+  }, [selectedColor]);
   
   // Get cached product from localStorage
   const [cachedProduct, setCachedProduct] = useState(() => {
@@ -54,6 +76,26 @@ export default function ProductPage() {
 
   const displayProduct = product || cachedProduct;
   const isReallyLoading = isLoading && !displayProduct;
+
+  // Helper function to get images filtered by selected color
+  const getFilteredImages = () => {
+    if (!displayProduct?.images) return [];
+    
+    // If no color selected or no mappings exist, show all images
+    if (!selectedColor || !displayProduct.image_color_mappings?.length) {
+      return displayProduct.images;
+    }
+    
+    // Filter images that match the selected color (only those with a non-empty color assignment)
+    const mappedImages = displayProduct.image_color_mappings
+      .filter(m => m.color === selectedColor && m.color !== '')
+      .map(m => m.image_url);
+    
+    // If no images match this color, return empty - don't fall back
+    return mappedImages;
+  };
+
+  const filteredImages = getFilteredImages();
 
   if (isReallyLoading) {
     return (
@@ -118,7 +160,7 @@ export default function ProductPage() {
   }
 
   const handleAddToCart = () => {
-    addToCart(displayProduct, selectedSize);
+    addToCart(displayProduct, selectedSize, 1, selectedColor || null);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -254,15 +296,13 @@ export default function ProductPage() {
       }
     }
 
-    // Calculate additional price for custom prints
+    // Calculate additional price for custom prints using dynamic pricing
     let additionalPrice = 0;
     if (printLocation === 'both') {
-      additionalPrice = 598; // 299 * 2
+      additionalPrice = printPrices.both;
     } else if (printLocation === 'front' || printLocation === 'back') {
-      additionalPrice = 299;
+      additionalPrice = printPrices.single;
     }
-
-    console.log('[DEBUG ProductPage] customNotes before addToCart:', customNotes);
 
     const cartItem = {
       ...displayProduct,
@@ -281,7 +321,7 @@ export default function ProductPage() {
       custom_notes: customNotes,
     };
 
-    await addToCart(cartItem, selectedSize);
+    await addToCart(cartItem, selectedSize, 1, selectedColor || null);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
 
@@ -325,15 +365,29 @@ export default function ProductPage() {
               >
                 ← Go back to shop
               </Link>
-              <div style={{ background: '#f5f5f5', borderRadius: 8, overflow: 'hidden', marginBottom: 16, aspectRatio: '3/4' }}>
-                <img
-                  src={displayProduct.images?.[selectedImage] || '/images/placeholder.jpg'}
-                  alt={displayProduct.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
-                />
+              <div style={{ background: '#f5f5f5', borderRadius: 8, overflow: 'hidden', marginBottom: 16, aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {filteredImages.length > 0 ? (
+                  <img
+                    src={filteredImages[selectedImage] || filteredImages[0]}
+                    alt={displayProduct.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
+                  />
+                ) : selectedColor && displayProduct.image_color_mappings?.length > 0 ? (
+                  <div style={{ textAlign: 'center', color: '#999', padding: 20 }}>
+                    <ImageIcon size={48} style={{ marginBottom: 12, opacity: 0.4 }} />
+                    <p style={{ fontSize: 14, margin: 0 }}>No images available</p>
+                    <p style={{ fontSize: 12, margin: '4px 0 0', color: '#bbb' }}>for {selectedColor}</p>
+                  </div>
+                ) : (
+                  <img
+                    src={displayProduct.images?.[0] || '/images/placeholder.jpg'}
+                    alt={displayProduct.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
+                  />
+                )}
               </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                {displayProduct.images?.map((img, i) => (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {filteredImages.length > 0 && filteredImages.map((img, i) => (
                   <div
                     key={i}
                     onClick={() => setSelectedImage(i)}
@@ -428,38 +482,38 @@ export default function ProductPage() {
                       Choose Apparel Type:
                     </p>
                     <div style={{ display: 'flex', gap: '12px' }}>
-                      {[
-                        { value: 'hoodie', label: 'Hoodie', price: 999 },
-                        { value: 'tshirt', label: 'T-Shirt', price: 499 }
-                      ].map((type) => (
-                        <button
-                          key={type.value}
-                          onClick={() => setApparelType(type.value)}
-                          style={{
-                            flex: 1,
-                            padding: '12px 16px',
-                            border: apparelType === type.value ? '2px solid #1a1a1a' : '2px solid #d1d5db',
-                            background: apparelType === type.value ? '#f3f4f6' : '#fff',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <div style={{ fontWeight: 600, color: apparelType === type.value ? '#1a1a1a' : '#374151' }}>
-                            {type.label}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                            ₹{type.price}
-                          </div>
-                        </button>
-                      ))}
+                      {apparelTypes.map((type) => {
+                        const price = basePrices[type] || (type === 'hoodie' ? 999 : 499);
+                        return (
+                          <button
+                            key={type}
+                            onClick={() => setApparelType(type)}
+                            style={{
+                              flex: 1,
+                              padding: '12px 16px',
+                              border: apparelType === type ? '2px solid #1a1a1a' : '2px solid #d1d5db',
+                              background: apparelType === type ? '#f3f4f6' : '#fff',
+                              borderRadius: '10px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div style={{ fontWeight: 600, color: apparelType === type ? '#1a1a1a' : '#374151' }}>
+                              {type === 'hoodie' ? 'Hoodie' : 'T-Shirt'}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                              ₹{price}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* Print Location Selection */}
                   <div style={{ marginBottom: '20px' }}>
                     <p style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#1a1a1a' }}>
-                      Print Location: (+₹299 per location)
+                      Print Location: (+₹{printPrices.single} per location)
                     </p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {[
@@ -483,7 +537,7 @@ export default function ProductPage() {
                           }}
                         >
                           {loc.label}
-                          {loc.value === 'both' && <span style={{ marginLeft: '4px', color: '#6b7280' }}>(+₹598)</span>}
+                          {loc.value === 'both' && <span style={{ marginLeft: '4px', color: '#6b7280' }}>(+₹{printPrices.both})</span>}
                         </button>
                       ))}
                     </div>
@@ -592,23 +646,23 @@ export default function ProductPage() {
                   </div>
 
                   {/* Price Summary */}
-                  <div style={{ 
-                    background: '#fff', 
-                    borderRadius: '10px', 
+                  <div style={{
+                    background: '#f9fafb',
                     padding: '16px',
+                    borderRadius: '12px',
                     marginTop: '16px'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ color: '#6b7280' }}>Base Price ({apparelType === 'hoodie' ? 'Hoodie' : 'T-Shirt'}):</span>
-                      <span>₹{apparelType === 'hoodie' ? 999 : 499}</span>
+                      <span>₹{basePrices[apparelType] || (apparelType === 'hoodie' ? 999 : 499)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ color: '#6b7280' }}>Print Cost:</span>
-                      <span>₹{printLocation === 'both' ? 598 : (printLocation === 'front' || printLocation === 'back') ? 299 : 0}</span>
+                      <span>₹{printLocation === 'both' ? printPrices.both : (printLocation === 'front' || printLocation === 'back') ? printPrices.single : 0}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, fontSize: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '8px' }}>
                       <span>Total:</span>
-                      <span>₹{(apparelType === 'hoodie' ? 999 : 499) + (printLocation === 'both' ? 598 : (printLocation === 'front' || printLocation === 'back') ? 299 : 0)}</span>
+                      <span>₹{(basePrices[apparelType] || (apparelType === 'hoodie' ? 999 : 499)) + (printLocation === 'both' ? printPrices.both : (printLocation === 'front' || printLocation === 'back') ? printPrices.single : 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -620,7 +674,7 @@ export default function ProductPage() {
                   <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>
                     COLOR: {selectedColor || displayProduct.colors[0]}
                   </p>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {displayProduct.colors.map(color => (
                       <button
                         key={color}

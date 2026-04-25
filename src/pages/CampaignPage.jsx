@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, ShoppingCart, Package, Upload, Sparkles, CheckCircle, Clock } from 'lucide-react';
 import { useCampaign } from '../hooks/useCampaigns';
 import { useCart } from '../CartContext';
+import { useCustomDesignApparelTypes } from '../hooks/useAppSettings';
 import Header from '../components/Header';
 import { formatPrice } from '../lib/utils';
 import { toast } from 'sonner';
@@ -11,9 +12,18 @@ export default function CampaignPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { data: campaign, isLoading } = useCampaign(slug);
+  const { data: apparelTypes = ['hoodie'] } = useCustomDesignApparelTypes();
   const { addToCart } = useCart();
   const [customDesign, setCustomDesign] = useState(null);
   const [customDesignUploaded, setCustomDesignUploaded] = useState(false);
+  const [apparelType, setApparelType] = useState('hoodie');
+
+  // Set default apparel type based on available types
+  useEffect(() => {
+    if (apparelTypes.length > 0 && !apparelTypes.includes(apparelType)) {
+      setApparelType(apparelTypes[0]);
+    }
+  }, [apparelTypes, apparelType]);
 
   // Load custom design from localStorage on mount
   useEffect(() => {
@@ -70,8 +80,6 @@ export default function CampaignPage() {
   };
 
   const handleAddToCart = () => {
-    console.log('[DEBUG CampaignPage] Campaign products:', products);
-    console.log('[DEBUG CampaignPage] hasCustomDesign:', hasCustomDesign, 'customDesignUploaded:', customDesignUploaded);
     if (hasCustomDesign && !customDesignUploaded) {
       toast.error('Please upload your custom design first');
       return;
@@ -105,7 +113,7 @@ export default function CampaignPage() {
         is_custom_design: true,
         custom_design_front: customDesign?.imageUrl,
         custom_design_back: null,
-        apparel_type: 'hoodie',
+        apparel_type: apparelType,
         print_location: 'front',
       });
     }

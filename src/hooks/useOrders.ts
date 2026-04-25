@@ -201,7 +201,6 @@ export function useCreateOrder() {
         order_id: orderData.id,
         custom_notes: item.custom_notes || null,
       }));
-      console.log('Creating order items:', orderItems.map(i => ({ name: i.product_name, custom_notes: i.custom_notes })));
       const { data: createdItems, error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems)

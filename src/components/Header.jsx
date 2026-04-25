@@ -62,7 +62,7 @@ function CartSidebar({ onClose }) {
             <form className="w-commerce-commercecartform" style={{ display: 'block' }}>
               <div className="w-commerce-commercecartlist">
                 {cartItems.map(item => (
-                  <div key={`${item.id}-${item.size}`} className="w-commerce-commercecartitem cart-item">
+                  <div key={`${item.id}-${item.size}-${item.color || 'default'}`} className="w-commerce-commercecartitem cart-item">
                     <Link to={`/product/${item.slug || item.id}`} className="w-commerce-commercecartitemimage-link">
                       <img src={item.images?.[0] || '/images/placeholder.jpg'} alt={item.name} className="w-commerce-commercecartitemimage" />
                     </Link>
@@ -73,8 +73,9 @@ function CartSidebar({ onClose }) {
                       <div className="cart-price">{formatPrice(item.price * item.qty)}</div>
                       <ul className="w-commerce-commercecartoptionlist">
                         <li className="cart-size"><span>Size: {item.size}</span></li>
+                        {item.color && <li className="cart-size"><span>Color: {item.color}</span></li>}
                       </ul>
-                      <a href="#" className="cart-product-remove w-inline-block" onClick={e => { e.preventDefault(); removeFromCart(item.id, item.size); }}>
+                      <a href="#" className="cart-product-remove w-inline-block" onClick={e => { e.preventDefault(); removeFromCart(item.id, item.size, item.color); }}>
                         <div className="cart-remove">Remove</div>
                       </a>
                       
@@ -95,13 +96,13 @@ function CartSidebar({ onClose }) {
                         <button 
                           type="button" 
                           className="qty-btn minus"
-                          onClick={() => updateQty(item.id, item.size, item.qty - 1)}
+                          onClick={() => updateQty(item.id, item.size, item.qty - 1, item.color)}
                         >−</button>
                         <span className="qty-value">{item.qty}</span>
                         <button 
                           type="button" 
                           className="qty-btn plus"
-                          onClick={() => updateQty(item.id, item.size, item.qty + 1)}
+                          onClick={() => updateQty(item.id, item.size, item.qty + 1, item.color)}
                         >+</button>
                       </div>
                     </div>

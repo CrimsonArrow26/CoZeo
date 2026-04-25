@@ -1583,34 +1583,89 @@ body.modal-open {
 }
 
 @media (max-width: 768px) {
+  /* ===== DEAL SECTION MOBILE ===== */
+  .deal-section {
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+
   .deal-carousel {
-    height: 1046px;
-    min-height: 1046px;
+    height: 400px;
+    min-height: 400px;
   }
-  
+
+  .deal-image-box {
+    border-radius: 16px;
+  }
+
   .deal-nav-arrow {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
-  
+
   .deal-nav-arrow.prev {
     left: 8px;
   }
-  
+
   .deal-nav-arrow.next {
     right: 8px;
   }
-  
+
   .deal-right-box {
     padding: 0 16px;
     position: relative;
   }
-  
+
+  .deal-left-box {
+    padding-top: 0;
+    padding-bottom: 24px;
+  }
+
+  .deal-price-box {
+    margin-top: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .deal-btn-box {
+    margin-top: 16px;
+  }
+
+  .deal-pagination {
+    margin-top: 16px;
+    gap: 6px;
+  }
+
+  .deal-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .deal-products-list {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .deal-product-item {
+    padding: 6px 8px;
+  }
+
+  .deal-section-progress-bar {
+    height: 3px;
+  }
+
+  /* ===== FEATURED SECTION MOBILE ===== */
+  .featured-section {
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+
+  /* ===== CAMPAIGN DETAIL MOBILE ===== */
   .campaign-detail-grid {
     grid-template-columns: 1fr;
     gap: 32px;
   }
-  
+
   .campaign-detail-title {
     font-size: 28px;
   }

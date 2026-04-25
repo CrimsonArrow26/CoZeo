@@ -54,7 +54,6 @@ export function CartProvider({ children }) {
       setIsSyncing(true);
       try {
         const items = await fetchUserCart();
-        console.log('[DEBUG CartContext] loadCart fetched items:', items.map(i => ({ id: i.id, product_id: i.product_id, custom_notes: i.custom_notes })));
         setDbCartItems(items);
         // Convert DB items to local format
         const localFormatItems = items.map(item => ({
@@ -136,7 +135,6 @@ export function CartProvider({ children }) {
 
   // Add to cart
   const addToCart = async (product, size = 'M', qty = 1, color = null) => {
-    console.log('[DEBUG CartContext] addToCart called with:', { id: product.id, name: product.name, custom_notes: product.custom_notes, is_custom_design: product.is_custom_design });
     if (user?.id) {
       // Logged in user - add to database
       setIsSyncing(true);
@@ -159,24 +157,23 @@ export function CartProvider({ children }) {
             print_location: product.print_location || null,
             custom_notes: product.custom_notes || null,
           } : undefined;
-          console.log('[DEBUG CartContext] customDesignFields:', customDesignFields);
           await addCartItemDB(String(product.id), size, qty, color, customDesignFields);
         }
         
         // Reload cart from database
         await loadCart();
       } catch (err) {
-        console.error('[DEBUG CartContext] Error adding to cart:', err);
+        // Silently fail - cart operation is non-critical
       } finally {
         setIsSyncing(false);
       }
     } else {
       // Guest user - add to local state and save immediately
       const newCartItems = (() => {
-        const existing = cartItems.find(i => i.id === product.id && i.size === size);
+        const existing = cartItems.find(i => i.id === product.id && i.size === size && i.color === color);
         if (existing) {
           return cartItems.map(i => 
-            i.id === product.id && i.size === size 
+            i.id === product.id && i.size === size && i.color === color
               ? { ...i, qty: Math.min(i.qty + qty, 10) } 
               : i
           );
@@ -189,7 +186,6 @@ export function CartProvider({ children }) {
           originalPrice: product.price,
           maxStock: product.stock || 10
         };
-        console.log('[DEBUG CartContext] Guest cart newItem:', { id: newItem.id, name: newItem.name, custom_notes: newItem.custom_notes });
         return [...cartItems, newItem];
       })();
       setCartItems(newCartItems);
@@ -200,11 +196,11 @@ export function CartProvider({ children }) {
   };
 
   // Remove from cart
-  const removeFromCart = async (id, size) => {
+  const removeFromCart = async (id, size, color) => {
     if (user?.id) {
       // Logged in user - remove from database
       const cartItem = dbCartItems.find(
-        item => item.product?.id === id && item.size === size
+        item => item.product?.id === id && item.size === size && (color ? item.color === color : true)
       );
       if (cartItem) {
         setIsSyncing(true);
@@ -219,7 +215,7 @@ export function CartProvider({ children }) {
       }
     } else {
       // Guest user - remove from local state
-      setCartItems(prev => prev.filter(i => !(i.id === id && i.size === size)));
+      setCartItems(prev => prev.filter(i => !(i.id === id && i.size === size && (color ? i.color === color : true))));
     }
   };
 
@@ -256,11 +252,11 @@ export function CartProvider({ children }) {
   };
 
   // Update quantity
-  const updateQty = async (id, size, qty) => {
+  const updateQty = async (id, size, qty, color) => {
     if (user?.id) {
       // Logged in user - update in database
       const cartItem = dbCartItems.find(
-        item => item.product?.id === id && item.size === size
+        item => item.product?.id === id && item.size === size && (color ? item.color === color : true)
       );
       if (cartItem) {
         setIsSyncing(true);
@@ -281,10 +277,10 @@ export function CartProvider({ children }) {
       // Guest user - update local state
       if (qty < 1) {
         // Remove item when quantity is 0
-        setCartItems(prev => prev.filter(i => !(i.id === id && i.size === size)));
+        setCartItems(prev => prev.filter(i => !(i.id === id && i.size === size && (color ? i.color === color : true))));
       } else {
         setCartItems(prev => prev.map(i => 
-          i.id === id && i.size === size ? { ...i, qty: Math.min(qty, 10) } : i
+          i.id === id && i.size === size && (color ? i.color === color : true) ? { ...i, qty: Math.min(qty, 10) } : i
         ));
       }
     }

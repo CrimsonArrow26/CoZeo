@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import Header from '../../components/Header';
@@ -21,6 +21,7 @@ export default function AdminProductEditPage() {
   const { data: product, isLoading } = useProduct(id || '');
   const [isSaving, setIsSaving] = useState(false);
   const [customColor, setCustomColor] = useState('');
+  const prevImagesRef = useRef<string[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -34,6 +35,7 @@ export default function AdminProductEditPage() {
     category: 'man',
     badge: null as string | null,
     images: [] as string[],
+    image_color_mappings: [] as { image_url: string; color: string }[],
     sizes: [] as string[],
     colors: [] as string[],
     specs: {
@@ -66,6 +68,7 @@ export default function AdminProductEditPage() {
         category: product.category || 'man',
         badge: product.badge,
         images: product.images || [],
+        image_color_mappings: product.image_color_mappings || [],
         sizes: product.sizes || [],
         colors: (product.colors || []).filter((c: string) => COLORS.includes(c)),
         specs: {
@@ -86,6 +89,46 @@ export default function AdminProductEditPage() {
     }
   }, [product]);
 
+  // Sync images with color mappings - ensure all images have a mapping entry
+  useEffect(() => {
+    const currentImages = formData.images || [];
+    const prevImages = prevImagesRef.current;
+    
+    // Only run if images array actually changed
+    if (JSON.stringify(currentImages) !== JSON.stringify(prevImages)) {
+      prevImagesRef.current = [...currentImages];
+      
+      setFormData(prev => {
+        const currentMappings = prev.image_color_mappings || [];
+        
+        // Find images that don't have a mapping entry
+        const existingUrls = new Set(currentMappings.map(m => m.image_url));
+        const newMappings = currentImages
+          .filter(img => !existingUrls.has(img))
+          .map(img => ({ image_url: img, color: '' }));
+        
+        // If there are new images without mappings, add them
+        if (newMappings.length > 0) {
+          return {
+            ...prev,
+            image_color_mappings: [...currentMappings, ...newMappings]
+          };
+        }
+        
+        // Also clean up mappings for images that no longer exist
+        const validMappings = currentMappings.filter(m => currentImages.includes(m.image_url));
+        if (validMappings.length !== currentMappings.length) {
+          return {
+            ...prev,
+            image_color_mappings: validMappings
+          };
+        }
+        
+        return prev;
+      });
+    }
+  }, [formData.images]);
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -102,15 +145,29 @@ export default function AdminProductEditPage() {
     if (url && url.trim()) {
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, url.trim()]
+        images: [...prev.images, url.trim()],
+        // Add mapping with no color initially
+        image_color_mappings: [...prev.image_color_mappings, { image_url: url.trim(), color: '' }]
       }));
     }
   };
 
   const handleImageRemove = (index: number) => {
+    const removedImage = formData.images[index];
     setFormData(prev => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: prev.images.filter((_, i) => i !== index),
+      // Also remove the color mapping for this image
+      image_color_mappings: prev.image_color_mappings.filter(m => m.image_url !== removedImage)
+    }));
+  };
+
+  const handleImageColorChange = (imageUrl: string, color: string) => {
+    setFormData(prev => ({
+      ...prev,
+      image_color_mappings: prev.image_color_mappings.map(m => 
+        m.image_url === imageUrl ? { ...m, color } : m
+      )
     }));
   };
 
@@ -364,32 +421,95 @@ export default function AdminProductEditPage() {
                     Add Image
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                  {formData.images.map((img, index) => (
-                    <div key={index} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '2px solid #e5e5e5' }}>
-                      <img src={img} alt={`Product ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button 
-                        onClick={() => handleImageRemove(index)}
-                        style={{ 
-                          position: 'absolute', 
-                          top: 4, 
-                          right: 4, 
-                          width: 28, 
-                          height: 28, 
-                          borderRadius: '50%', 
-                          background: '#ef4444', 
-                          color: '#fff', 
-                          border: 'none', 
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
+                <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+                  Assign a color to each image so customers see the correct images when selecting colors.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                  {formData.images.map((img, index) => {
+                    // Find the color mapping for this image
+                    const mapping = formData.image_color_mappings.find(m => m.image_url === img);
+                    const assignedColor = mapping?.color || '';
+                    
+                    return (
+                      <div key={index} style={{ 
+                        position: 'relative', 
+                        borderRadius: 8, 
+                        overflow: 'hidden', 
+                        border: '2px solid #e5e5e5',
+                        background: '#fff'
+                      }}>
+                        <div style={{ aspectRatio: '1', position: 'relative' }}>
+                          <img src={img} alt={`Product ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button 
+                            onClick={() => handleImageRemove(index)}
+                            style={{ 
+                              position: 'absolute', 
+                              top: 4, 
+                              right: 4, 
+                              width: 28, 
+                              height: 28, 
+                              borderRadius: '50%', 
+                              background: '#ef4444', 
+                              color: '#fff', 
+                              border: 'none', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        
+                        {/* Color Assignment Dropdown */}
+                        <div style={{ padding: 12, borderTop: '1px solid #e5e5e5' }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>
+                            Color
+                          </label>
+                          <select
+                            value={assignedColor}
+                            onChange={(e) => handleImageColorChange(img, e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              borderRadius: 6,
+                              border: '2px solid #e5e5e5',
+                              fontSize: 13,
+                              background: '#fff',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="">Select color...</option>
+                            {formData.colors.map((color) => (
+                              <option key={color} value={color}>{color}</option>
+                            ))}
+                          </select>
+                          {assignedColor && (
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 6, 
+                              marginTop: 8,
+                              fontSize: 12,
+                              color: '#22c55e'
+                            }}>
+                              <span style={{ 
+                                width: 14, 
+                                height: 14, 
+                                borderRadius: '50%', 
+                                background: assignedColor.toLowerCase() === 'white' ? '#fff' : 
+                                          assignedColor.toLowerCase() === 'black' ? '#000' : 
+                                          assignedColor.toLowerCase(),
+                                border: '1px solid #ddd'
+                              }} />
+                              Assigned: {assignedColor}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                   {formData.images.length === 0 && (
                     <div style={{ 
                       aspectRatio: '1', 

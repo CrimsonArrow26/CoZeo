@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { Clock, Package, Upload, ArrowRight, X, ShoppingCart, Sparkles, CheckCircle } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 import { useCart } from '../CartContext';
+import { useCustomDesignApparelTypes } from '../hooks/useAppSettings';
 import { toast } from 'sonner';
 
 export default function CampaignCard({ campaign }) {
   const [showModal, setShowModal] = useState(false);
+  const { data: apparelTypes = ['hoodie'] } = useCustomDesignApparelTypes();
   const { addToCart } = useCart();
   const products = campaign.campaign_products || [];
   const regularProducts = products.filter(p => !p.is_custom_design_slot);
@@ -18,6 +20,7 @@ export default function CampaignCard({ campaign }) {
   const [isUploading, setIsUploading] = useState(false);
   const [customDesignUploaded, setCustomDesignUploaded] = useState(false);
   const [customDesign, setCustomDesign] = useState(null);
+  const [apparelType, setApparelType] = useState('hoodie');
   
   const savings = campaign.original_total - campaign.combo_price;
   const discountPercentage = Math.round((savings / campaign.original_total) * 100);
@@ -71,9 +74,6 @@ export default function CampaignCard({ campaign }) {
   };
 
   const handleAddToCart = () => {
-    console.log('[DEBUG CampaignCard] Campaign:', campaign.name);
-    console.log('[DEBUG CampaignCard] Products:', products);
-    console.log('[DEBUG CampaignCard] hasCustomDesign:', hasCustomDesign, 'customDesignUploaded:', customDesignUploaded);
     if (hasCustomDesign && !customDesignUploaded) {
       toast.error('Please upload your custom design first');
       return;
@@ -108,7 +108,7 @@ export default function CampaignCard({ campaign }) {
         custom_design_id: customDesign?.imageUrl, // Use Cloudinary URL as ID
         custom_design_front: customDesign?.imageUrl,
         custom_design_back: null,
-        apparel_type: 'hoodie',
+        apparel_type: apparelType,
         print_location: 'front',
       });
     }
