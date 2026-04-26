@@ -119,24 +119,23 @@ export default function DashboardPage() {
                   <Bell size={18} />
                   Notifications
                 </button>
+                <div className="dashboard-nav-divider"></div>
+                <button
+                  className={`nav-item ${isEditMode ? 'active' : ''}`}
+                  onClick={() => setSearchParams({ tab: 'profile', edit: 'true' })}
+                >
+                  <Edit3 size={18} />
+                  Edit Profile
+                </button>
+                <button
+                  type="button"
+                  className="nav-item sign-out-item"
+                  onClick={handleSignOut}
+                >
+                  <LogOut size={18} />
+                  Sign Out
+                </button>
               </nav>
-
-              <button 
-                className="edit-profile-btn"
-                onClick={() => setSearchParams({ tab: 'profile', edit: 'true' })}
-              >
-                <Edit3 size={18} />
-                Edit Profile
-              </button>
-
-              <button 
-                type="button" 
-                className="sign-out-btn" 
-                onClick={handleSignOut}
-              >
-                <LogOut size={18} />
-                Sign Out
-              </button>
             </aside>
 
             {/* Main Content */}

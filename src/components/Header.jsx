@@ -349,6 +349,7 @@ export default function Header() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -361,7 +362,7 @@ export default function Header() {
     e.preventDefault();
     setMobileOpen(false);
     if (location.pathname !== '/') {
-      window.location.href = `/#${id}`;
+      navigate(`/#${id}`);
       return;
     }
     const el = document.getElementById(id);
@@ -372,6 +373,19 @@ export default function Header() {
     document.body.style.overflow = (cartOpen || loginOpen || mobileOpen) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [cartOpen, loginOpen, mobileOpen]);
+
+  // Scroll to section after navigating from another page with a hash
+  useEffect(() => {
+    if (location.pathname === '/' && location.hash) {
+      const id = location.hash.replace('#', '');
+      // Wait for DOM to render before scrolling
+      const timer = setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
 
   const scrollItems = [
     { id: 'Hero-Section', label: 'Home' },
@@ -450,23 +464,49 @@ export default function Header() {
             </div>
             
             <div className="mobile-menu-content">
-              <nav className="mobile-menu-nav">
-                <Link to="/" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
-                  <span>Home</span>
-                </Link>
-                <Link to="/shop" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
-                  <span>Shop</span>
-                </Link>
-                <a href="#About-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'About-Section')}>
-                  <span>About Us</span>
-                </a>
-                <a href="#Featured-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Featured-Section')}>
-                  <span>Collection</span>
-                </a>
-                <a href="#Category-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Category-Section')}>
-                  <span>Categories</span>
-                </a>
-              </nav>
+              {location.pathname.startsWith('/admin') ? (
+                <nav className="mobile-menu-nav">
+                  <Link to="/admin" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Overview</span>
+                  </Link>
+                  <Link to="/admin/products" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Products</span>
+                  </Link>
+                  <Link to="/admin/orders" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Orders</span>
+                  </Link>
+                  <Link to="/admin/coupons" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Coupons</span>
+                  </Link>
+                  <Link to="/admin/campaigns" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Campaigns</span>
+                  </Link>
+                  <Link to="/admin?tab=settings" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Settings</span>
+                  </Link>
+                  <Link to="/" className="mobile-nav-link mobile-admin-back" onClick={() => setMobileOpen(false)}>
+                    <span>← Back to Main Menu</span>
+                  </Link>
+                </nav>
+              ) : (
+                <nav className="mobile-menu-nav">
+                  <Link to="/" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Home</span>
+                  </Link>
+                  <Link to="/shop" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                    <span>Shop</span>
+                  </Link>
+                  <a href="#About-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'About-Section')}>
+                    <span>About Us</span>
+                  </a>
+                  <a href="#Featured-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Featured-Section')}>
+                    <span>Collection</span>
+                  </a>
+                  <a href="#Category-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Category-Section')}>
+                    <span>Categories</span>
+                  </a>
+                </nav>
+              )}
             </div>
 
             <div className="mobile-menu-footer">

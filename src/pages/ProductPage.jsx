@@ -338,13 +338,14 @@ export default function ProductPage() {
   return (
     <div className="page-wrapper">
       <Header />
-      <section style={{ padding: '60px 0 80px', minHeight: '70vh' }}>
+      <section className="product-page-section" style={{ padding: '60px 0 80px', minHeight: '70vh' }}>
         <div className="w-layout-blockcontainer container w-container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'start' }}>
+          <div className="product-page-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'start' }}>
             {/* Image Gallery */}
-            <div style={{ position: 'relative' }}>
+            <div className="product-gallery-col" style={{ position: 'relative' }}>
               <Link 
                 to="/shop" 
+                className="product-back-link"
                 style={{ 
                   position: 'absolute',
                   top: 12,
@@ -365,7 +366,7 @@ export default function ProductPage() {
               >
                 ← Go back to shop
               </Link>
-              <div style={{ background: '#f5f5f5', borderRadius: 8, overflow: 'hidden', marginBottom: 16, aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="product-main-image" style={{ background: '#f5f5f5', borderRadius: 8, overflow: 'hidden', marginBottom: 16, aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {filteredImages.length > 0 ? (
                   <img
                     src={filteredImages[selectedImage] || filteredImages[0]}
@@ -405,7 +406,7 @@ export default function ProductPage() {
 
             {/* Product Info */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 8, fontFamily: 'Poppins, sans-serif' }}>
+              <div className="breadcrumb-link-block" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 8, fontFamily: 'Poppins, sans-serif' }}>
                 <Link to="/" style={{ color: '#999', textDecoration: 'none', fontSize: 14 }}>Home</Link>
                 <span style={{ color: '#999' }}>/</span>
                 <span style={{ color: '#999', fontSize: 14 }}>{displayProduct.name}</span>
@@ -415,7 +416,7 @@ export default function ProductPage() {
                   {displayProduct.badge}
                 </div>
               )}
-              <h1 style={{ fontFamily: '"Big Shoulders", sans-serif', fontSize: 48, fontWeight: 800, textTransform: 'uppercase', margin: '0 0 16px' }}>
+              <h1 className="product-page-title" style={{ fontFamily: '"Big Shoulders", sans-serif', fontSize: 48, fontWeight: 800, textTransform: 'uppercase', margin: '0 0 16px' }}>
                 {displayProduct.name}
               </h1>
               
@@ -723,7 +724,7 @@ export default function ProductPage() {
               )}
 
               {/* Action Buttons */}
-              <div className="product-actions">
+              <div className="product-actions product-page-actions">
                 <button
                   onClick={handleBuyNow}
                   disabled={displayProduct.stock === 0 || (isCustomApparel && !frontPreview && !backPreview)}

@@ -255,7 +255,7 @@ export default function AdminOrdersPage() {
                             disabled={deleteOrder.isPending}
                             title="Delete order"
                           >
-                            {deleteOrder.isPending ? '⏳' : '🗑️'}
+                            {deleteOrder.isPending ? '⏳' : 'Delete'}
                           </button>
                         </div>
                       )}

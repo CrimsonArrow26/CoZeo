@@ -296,7 +296,7 @@ export default function AdminProductEditPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 40, alignItems: 'start' }}>
+          <div className="product-edit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 40, alignItems: 'start' }}>
             {/* Left Column - Form */}
             <div className="admin-section">
               {/* Basic Info */}

@@ -4241,7 +4241,7 @@ a {
     color: var(--dark);
     font-size: var(--_font-size---small-paragraph);
     line-height: var(--_line-height---large);
-    border: 1px solid #0000;
+    border: 1px solid #b8333300;
     border-radius: 50px;
     height: 50px;
     margin-bottom: 0;

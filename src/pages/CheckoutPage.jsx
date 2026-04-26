@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import Header from '../components/Header';
@@ -41,6 +41,22 @@ export default function CheckoutPage() {
     notes: '',
   });
   const [paymentMethod, setPaymentMethod] = useState('cod');
+
+  // Populate form when profile data arrives (may not be available on first render)
+  useEffect(() => {
+    if (profile || user) {
+      setFormData(prev => ({
+        ...prev,
+        name: profile?.name || prev.name || '',
+        email: user?.email || prev.email || '',
+        phone: profile?.phone || prev.phone || '',
+        address: profile?.address || prev.address || '',
+        city: profile?.city || prev.city || '',
+        state: profile?.state || prev.state || '',
+        pincode: profile?.pincode || prev.pincode || '',
+      }));
+    }
+  }, [profile, user]);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const validateCoupon = useValidateCoupon();
@@ -458,6 +474,7 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           name="name"
+                          placeholder="Enter your full name"
                           value={formData.name}
                           onChange={handleInputChange}
                           required
@@ -470,6 +487,7 @@ export default function CheckoutPage() {
                         <input
                           type="tel"
                           name="phone"
+                          placeholder="Enter phone number"
                           value={formData.phone}
                           onChange={handleInputChange}
                           required
@@ -480,6 +498,7 @@ export default function CheckoutPage() {
                         <input
                           type="email"
                           name="email"
+                          placeholder="Enter email address"
                           value={formData.email}
                           onChange={handleInputChange}
                           required
@@ -491,6 +510,7 @@ export default function CheckoutPage() {
                       <label>Address *</label>
                       <textarea
                         name="address"
+                        placeholder="Enter your full address"
                         value={formData.address}
                         onChange={handleInputChange}
                         rows={3}
@@ -504,6 +524,7 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           name="city"
+                          placeholder="City"
                           value={formData.city}
                           onChange={handleInputChange}
                           required
@@ -514,6 +535,7 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           name="pincode"
+                          placeholder="Pincode"
                           value={formData.pincode}
                           onChange={handleInputChange}
                           required
@@ -621,14 +643,14 @@ export default function CheckoutPage() {
                   <div className="checkout-actions">
                     <button 
                       type="button"
-                      className="secondary-button"
+                      className="checkout-back-btn"
                       onClick={() => setStep(1)}
                     >
                       Back to Shipping
                     </button>
                     <button 
                       type="button"
-                      className="primary-button"
+                      className="checkout-place-btn"
                       onClick={handlePlaceOrder}
                       disabled={createOrder.isPending}
                     >
