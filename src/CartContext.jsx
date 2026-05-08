@@ -180,6 +180,7 @@ export function CartProvider({ children }) {
         }
         const newItem = { 
           ...product, 
+          price: product.discount_price,
           size, 
           qty,
           color,
