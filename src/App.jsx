@@ -31,7 +31,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import CampaignPage, { CustomDesignPage } from './pages/CampaignPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
-import RefundPage from './pages/RefundPage';
 import ShippingPage from './pages/ShippingPage';
 
 // Scroll to top on route change using Lenis
@@ -73,7 +72,6 @@ function AppContent() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/refund" element={<RefundPage />} />
       <Route path="/shipping" element={<ShippingPage />} />
       
       {/* Admin Routes */}

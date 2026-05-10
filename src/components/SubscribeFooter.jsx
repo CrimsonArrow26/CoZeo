@@ -153,7 +153,6 @@ export function Footer() {
                 {[
                   ['/terms', 'Terms of Service'],
                   ['/privacy', 'Privacy Policy'],
-                  ['/refund', 'Refund Policy'],
                   ['/shipping', 'Shipping Info'],
                 ].map(([href, label], i, arr) => (
                   <Link key={i} to={href} className={`footer-list-link w-inline-block${i === arr.length-1 ? ' mb-zero' : ''}`}>

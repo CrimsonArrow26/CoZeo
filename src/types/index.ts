@@ -131,6 +131,7 @@ export interface Coupon {
   expiry: string;
   usage_limit: number;
   used_count: number;
+  per_customer_limit: number;
   is_active: boolean;
 }
 

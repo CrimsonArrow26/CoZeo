@@ -18,6 +18,7 @@ export default function AdminCouponsPage() {
     code: '',
     discount_percentage: 10,
     max_uses: null,
+    per_customer_limit: 1,
     expires_at: '',
     is_active: true,
   });
@@ -32,11 +33,14 @@ export default function AdminCouponsPage() {
 
     const couponData = {
       code: formData.code.trim().toUpperCase(),
-      discount_percentage: parseInt(formData.discount_percentage) || 10,
-      max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
-      expires_at: formData.expires_at || null,
+      type: 'percentage',
+      value: parseInt(formData.discount_percentage) || 10,
+      minimum_order: 0,
+      max_discount: null,
+      expiry: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
+      usage_limit: formData.max_uses ? parseInt(formData.max_uses) : null,
+      per_customer_limit: parseInt(formData.per_customer_limit) || 1,
       is_active: formData.is_active,
-      current_uses: 0,
     };
 
     await createCoupon.mutateAsync(couponData);
@@ -45,6 +49,7 @@ export default function AdminCouponsPage() {
       code: '',
       discount_percentage: 10,
       max_uses: null,
+      per_customer_limit: 1,
       expires_at: '',
       is_active: true,
     });
@@ -54,9 +59,11 @@ export default function AdminCouponsPage() {
     e.preventDefault();
     
     const updates = {
-      discount_percentage: parseInt(formData.discount_percentage) || 10,
-      max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
-      expires_at: formData.expires_at || null,
+      type: 'percentage',
+      value: parseInt(formData.discount_percentage) || 10,
+      usage_limit: formData.max_uses ? parseInt(formData.max_uses) : null,
+      per_customer_limit: parseInt(formData.per_customer_limit) || 1,
+      expiry: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
       is_active: formData.is_active,
     };
 
@@ -66,6 +73,7 @@ export default function AdminCouponsPage() {
       code: '',
       discount_percentage: 10,
       max_uses: null,
+      per_customer_limit: 1,
       expires_at: '',
       is_active: true,
     });
@@ -76,8 +84,9 @@ export default function AdminCouponsPage() {
     setFormData({
       code: coupon.code,
       discount_percentage: coupon.discount_percentage,
-      max_uses: coupon.max_uses || '',
-      expires_at: coupon.expires_at ? coupon.expires_at.split('T')[0] : '',
+      max_uses: coupon.usage_limit || '',
+      per_customer_limit: coupon.per_customer_limit || 1,
+      expires_at: coupon.expiry ? coupon.expiry.split('T')[0] : '',
       is_active: coupon.is_active,
     });
   };
@@ -88,13 +97,13 @@ export default function AdminCouponsPage() {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'No expiry';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
     });
   };
 
@@ -165,6 +174,18 @@ export default function AdminCouponsPage() {
                 />
               </div>
               <div className="form-group">
+                <label>Per Customer Limit</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.per_customer_limit}
+                  onChange={(e) => setFormData({ ...formData, per_customer_limit: e.target.value })}
+                  placeholder="1"
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
                 <label>Expires At (optional)</label>
                 <input
                   type="date"
@@ -219,6 +240,7 @@ export default function AdminCouponsPage() {
                   <th>Discount</th>
                   <th>Uses</th>
                   <th>Max Uses</th>
+                  <th>Per Customer</th>
                   <th>Expires</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -244,7 +266,7 @@ export default function AdminCouponsPage() {
                           />
                           %
                         </td>
-                        <td>{coupon.current_uses}</td>
+                        <td>{coupon.used_count}</td>
                         <td>
                           <input
                             type="number"
@@ -254,6 +276,16 @@ export default function AdminCouponsPage() {
                             className="table-input"
                             style={{ width: '80px' }}
                             placeholder="∞"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="1"
+                            value={formData.per_customer_limit}
+                            onChange={(e) => setFormData({ ...formData, per_customer_limit: e.target.value })}
+                            className="table-input"
+                            style={{ width: '60px' }}
                           />
                         </td>
                         <td>
@@ -300,13 +332,14 @@ export default function AdminCouponsPage() {
                             <span className="coupon-tag">{coupon.code}</span>
                           </div>
                         </td>
-                        <td>{coupon.discount_percentage}%</td>
-                        <td>{coupon.current_uses}</td>
-                        <td>{coupon.max_uses || '∞'}</td>
-                        <td>{formatDate(coupon.expires_at)}</td>
+                        <td>{coupon.value}%</td>
+                        <td>{coupon.used_count}</td>
+                        <td>{coupon.usage_limit || '∞'}</td>
+                        <td>{coupon.per_customer_limit || 1}</td>
+                        <td>{formatDate(coupon.expiry)}</td>
                         <td>
-                          <span className={`status-badge ${coupon.is_active && !isExpired(coupon.expires_at) ? 'active' : 'inactive'}`}>
-                            {coupon.is_active && !isExpired(coupon.expires_at) ? 'Active' : isExpired(coupon.expires_at) ? 'Expired' : 'Inactive'}
+                          <span className={`status-badge ${coupon.is_active && !isExpired(coupon.expiry) ? 'active' : 'inactive'}`}>
+                            {coupon.is_active && !isExpired(coupon.expiry) ? 'Active' : isExpired(coupon.expiry) ? 'Expired' : 'Inactive'}
                           </span>
                         </td>
                         <td>
