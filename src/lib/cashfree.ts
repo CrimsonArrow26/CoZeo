@@ -5,27 +5,29 @@
 const CASHFREE_ENV = (import.meta.env.VITE_CASHFREE_ENV || 'sandbox').split('#')[0].trim();
 // Cashfree uses a single SDK URL; mode (sandbox/production) is set at init time
 const CASHFREE_SCRIPT_URL = 'https://sdk.cashfree.com/js/v3/cashfree.js';
-console.log('[Cashfree] Environment:', CASHFREE_ENV);
-console.log('[Cashfree] Script URL:', CASHFREE_SCRIPT_URL);
+if (import.meta.env.DEV) {
+  console.log('[Cashfree] Environment:', CASHFREE_ENV);
+  console.log('[Cashfree] Script URL:', CASHFREE_SCRIPT_URL);
+}
 
 // Load Cashfree checkout script
 export function loadCashfreeScript() {
   return new Promise((resolve, reject) => {
-    console.log('[Cashfree] Checking if SDK already loaded...');
+    if (import.meta.env.DEV) console.log('[Cashfree] Checking if SDK already loaded...');
     
     if ((window as any).Cashfree) {
-      console.log('[Cashfree] SDK already loaded');
+      if (import.meta.env.DEV) console.log('[Cashfree] SDK already loaded');
       resolve(true);
       return;
     }
     
     const existingScript = document.getElementById('cashfree-script');
     if (existingScript) {
-      console.log('[Cashfree] Script tag exists, waiting for SDK...');
+      if (import.meta.env.DEV) console.log('[Cashfree] Script tag exists, waiting for SDK...');
       // Script exists but SDK not ready, wait for it
       const checkInterval = setInterval(() => {
         if ((window as any).Cashfree) {
-          console.log('[Cashfree] SDK became available');
+          if (import.meta.env.DEV) console.log('[Cashfree] SDK became available');
           clearInterval(checkInterval);
           resolve(true);
         }
@@ -39,7 +41,7 @@ export function loadCashfreeScript() {
       return;
     }
     
-    console.log('[Cashfree] Creating script tag...');
+    if (import.meta.env.DEV) console.log('[Cashfree] Creating script tag...');
     const script = document.createElement('script');
     script.id = 'cashfree-script';
     script.src = CASHFREE_SCRIPT_URL;
@@ -49,13 +51,13 @@ export function loadCashfreeScript() {
     script.crossOrigin = 'anonymous';
     
     script.onload = () => {
-      console.log('[Cashfree] Script loaded, checking for SDK...');
+      if (import.meta.env.DEV) console.log('[Cashfree] Script loaded, checking for SDK...');
       // Wait a moment for SDK to initialize
       let attempts = 0;
       const checkSDK = setInterval(() => {
         attempts++;
         if ((window as any).Cashfree) {
-          console.log('[Cashfree] SDK initialized after', attempts, 'attempts');
+          if (import.meta.env.DEV) console.log('[Cashfree] SDK initialized after', attempts, 'attempts');
           clearInterval(checkSDK);
           resolve(true);
         } else if (attempts > 30) { // 3 seconds max
@@ -76,7 +78,7 @@ export function loadCashfreeScript() {
     
     // Append to head for script loading
     document.head.appendChild(script);
-    console.log('[Cashfree] Script appended to head');
+    if (import.meta.env.DEV) console.log('[Cashfree] Script appended to head');
   });
 }
 

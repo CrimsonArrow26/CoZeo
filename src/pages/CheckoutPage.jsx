@@ -6,7 +6,7 @@ import { SubscribeSection, Footer } from '../components/SubscribeFooter';
 import { useCart } from '../CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCreateOrder } from '../hooks/useOrders';
-import { useValidateCoupon } from '../hooks/useCoupons';
+import { useValidateCoupon, recordCouponUsage } from '../hooks/useCoupons';
 import { useCartCampaign } from '../hooks/useCartCampaign';
 import { formatPrice } from '../lib/utils';
 import { openCashfreeCheckout, createCashfreeReceipt } from '../lib/cashfree';
@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   }, [profile, user]);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const validateCoupon = useValidateCoupon();
   
   // Campaign discount detection
@@ -74,7 +75,7 @@ export default function CheckoutPage() {
       const result = await validateCoupon.mutateAsync(couponCode.trim().toUpperCase());
       if (result.valid) {
         setAppliedCoupon(result.coupon);
-        toast.success(`Coupon applied! ${result.coupon.discount_percentage}% discount`);
+        toast.success(`Coupon applied! ${result.coupon.value}% discount`);
       } else {
         toast.error(result.message || 'Invalid coupon code');
       }
@@ -90,7 +91,7 @@ export default function CheckoutPage() {
   };
 
   const discountAmount = appliedCoupon 
-    ? Math.round(subtotal * (appliedCoupon.discount_percentage / 100)) 
+    ? Math.round(subtotal * (appliedCoupon.value / 100)) 
     : campaignSavings || 0;
   const finalTotal = campaignTotal || (subtotal - discountAmount);
 
@@ -100,10 +101,13 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (isSubmitting) return;
     if (!user) {
       toast.error('Please login to place an order');
       return;
     }
+
+    setIsSubmitting(true);
 
     // Helper function to save shipping address to profile
     const saveShippingAddressToProfile = async () => {
@@ -287,6 +291,11 @@ export default function CheckoutPage() {
 
             }
             
+            // Record coupon usage
+            if (appliedCoupon) {
+              await recordCouponUsage(appliedCoupon.id, user.id, order.id);
+            }
+            
             clearCart();
             navigate(`/order-confirmation/${order.id}`);
           },
@@ -308,6 +317,7 @@ export default function CheckoutPage() {
         });
       } catch (error) {
         toast.error('Failed to initiate payment. Please try again.');
+        setIsSubmitting(false);
         return;
       }
       return;
@@ -418,11 +428,17 @@ export default function CheckoutPage() {
       // Save shipping address to profile for future orders
       await saveShippingAddressToProfile();
 
+      // Record coupon usage
+      if (appliedCoupon) {
+        await recordCouponUsage(appliedCoupon.id, user.id, order.id);
+      }
+
       clearCart();
       toast.success('Order placed successfully!');
       navigate(`/order-confirmation/${order.id}`);
     } catch (error) {
       toast.error('Failed to place order. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
@@ -682,7 +698,7 @@ export default function CheckoutPage() {
                   <div className="applied-coupon">
                     <div className="coupon-badge">
                       <span className="coupon-code">{appliedCoupon.code}</span>
-                      <span className="coupon-discount">{appliedCoupon.discount_percentage}% OFF</span>
+                      <span className="coupon-discount">{appliedCoupon.value}% OFF</span>
                       <button 
                         type="button" 
                         className="remove-coupon-btn"
@@ -725,7 +741,7 @@ export default function CheckoutPage() {
                 
                 {appliedCoupon && (
                   <div className="order-row discount">
-                    <span>Discount ({appliedCoupon.discount_percentage}%)</span>
+                    <span>Discount ({appliedCoupon.value}%)</span>
                     <span className="discount-amount">-{formatPrice(discountAmount)}</span>
                   </div>
                 )}

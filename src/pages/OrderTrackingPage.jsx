@@ -19,19 +19,6 @@ export default function OrderTrackingPage() {
   const { data: order, isLoading } = useOrder(id || '');
   const { data: orderItems } = useOrderItems(id || '');
 
-  // Debug: Log order items to verify custom design data
-  console.log('OrderTrackingPage - orderItems:', orderItems);
-  if (orderItems?.length > 0) {
-    orderItems.forEach((item, i) => {
-      console.log(`Item ${i}:`, {
-        name: item.product_name,
-        isCustom: item.is_custom_design,
-        front: item.custom_design_front?.slice(0, 50),
-        back: item.custom_design_back?.slice(0, 50)
-      });
-    });
-  }
-
   // Check if user came from admin orders
   const fromAdmin = location.state?.from === 'admin';
 

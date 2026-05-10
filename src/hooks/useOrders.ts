@@ -129,17 +129,33 @@ export function useOrders() {
   });
 }
 
-// Fetch single order
+// Fetch single order (with ownership check for non-admin users)
 export function useOrder(id: string) {
   return useQuery({
     queryKey: orderKeys.detail(id),
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      // First fetch the order
       const data = await supabaseFetch('orders', {
         select: '*',
         filters: { id },
         single: true
       });
       if (!data) throw new Error('Order not found');
+      
+      // Check ownership: only the order owner or admin can view it
+      if (data.user_id !== user.id) {
+        // Check if user is admin
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        const isAdmin = roles?.some((r: { role: string }) => r.role === 'admin') ?? false;
+        if (!isAdmin) throw new Error('Order not found');
+      }
+      
       return data as Order;
     },
     enabled: !!id,

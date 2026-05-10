@@ -150,13 +150,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkAdminRole(userId: string) {
     try {
-      // Use direct fetch instead of Supabase client
+      // Get the user's access token for authenticated request
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || SUPABASE_ANON_KEY;
+      
       const url = `https://rbjivulozgubrenzwcjx.supabase.co/rest/v1/user_roles?user_id=eq.${userId}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiaml2dWxvemd1YnJlbnp3Y2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNjM2MzYsImV4cCI6MjA4ODkzOTYzNn0.5-CPtlAuIUxzBgLLVl0AOKepGOfVmunGwMy3e9lWsRw',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiaml2dWxvemd1YnJlbnp3Y2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNjM2MzYsImV4cCI6MjA4ODkzOTYzNn0.5-CPtlAuIUxzBgLLVl0AOKepGOfVmunGwMy3e9lWsRw'
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${authToken}`
         }
       });
       
