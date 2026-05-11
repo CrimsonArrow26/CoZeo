@@ -25,14 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(() => {
-    // Initialize from localStorage if available
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cozeo_isAdmin');
-      return saved === 'true';
-    }
-    return false;
-  });
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -95,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
-        localStorage.removeItem('cozeo_isAdmin');
       }
       setIsLoading(false);
     });
@@ -200,7 +192,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isAdminUser = data?.some((r: any) => r.role === 'admin') ?? false;
       
       setIsAdmin(isAdminUser);
-      localStorage.setItem('cozeo_isAdmin', String(isAdminUser));
     } catch (err) {
       // Error checking admin role
     }
@@ -237,7 +228,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
-    localStorage.removeItem('cozeo_isAdmin');
     
     try {
       // Await Supabase signOut to ensure session is properly cleared
