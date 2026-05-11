@@ -29,49 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Clear any stale Supabase auth locks from previous sessions
-    try {
-      const lockKey = `lock:sb-rbjivulozgubrenzwcjx-auth-token`;
-      // Navigator locks auto-release when the tab closes, but localStorage
-      // based locks from older supabase-js versions may persist
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && key.includes('lock') && key.includes('auth-token')) {
-          localStorage.removeItem(key);
-        }
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
-
-    const initializeAuth = async () => {
-      // Add a timeout so the app doesn't freeze if getSession() hangs
-      const timeoutPromise = new Promise<void>((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 8000);
-      });
-
-      const sessionPromise = supabase.auth.getSession().then(async ({ data: { session } }) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await Promise.all([
-            fetchProfile(session.user.id, session.access_token),
-            checkAdminRole(session.user.id)
-          ]);
-        }
-      }).catch(() => {
-        // getSession failed - likely a lock issue, continue without session
-      });
-
-      // Race between session fetch and timeout
-      await Promise.race([sessionPromise, timeoutPromise]);
-      setIsLoading(false);
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
+    // Use onAuthStateChange as the single source of truth for session state.
+    // It fires immediately with the current session on subscription — no Web Lock contention.
+    // This avoids the getSession() lock hang issue.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       if (session?.user && session.access_token) {
@@ -81,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // fetchProfile error
         }
         try {
-          await checkAdminRole(session.user.id);
+          await checkAdminRole(session.user.id, session.access_token);
         } catch (err) {
           // checkAdminRole error
         }
@@ -167,11 +127,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function checkAdminRole(userId: string) {
+  async function checkAdminRole(userId: string, accessToken?: string) {
     try {
-      // Get the user's access token for authenticated request
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token || SUPABASE_ANON_KEY;
+      const authToken = accessToken || SUPABASE_ANON_KEY;
       
       const url = `https://rbjivulozgubrenzwcjx.supabase.co/rest/v1/user_roles?user_id=eq.${userId}`;
       const response = await fetch(url, {
@@ -249,9 +207,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return { error: new Error('Not authenticated') };
     
     try {
-      // Get access token from the current session
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token || SUPABASE_ANON_KEY;
+      // Get access token - try getSession first, fall back to localStorage
+      let authToken = SUPABASE_ANON_KEY;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        authToken = session?.access_token || SUPABASE_ANON_KEY;
+      } catch {
+        // getSession lock issue - read from localStorage
+        const stored = localStorage.getItem('sb-rbjivulozgubrenzwcjx-auth-token');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          authToken = parsed?.access_token || SUPABASE_ANON_KEY;
+        }
+      }
       
       // Use direct fetch with proper auth token
       const url = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;

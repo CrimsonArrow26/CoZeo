@@ -14,8 +14,18 @@ async function supabaseFetch(table: string, options?: {
   limit?: number;
   single?: boolean;
 }) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token || SUPABASE_ANON_KEY;
+  // Get token - try getSession first, fall back to localStorage to avoid lock hangs
+  let token = SUPABASE_ANON_KEY;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token || SUPABASE_ANON_KEY;
+  } catch {
+    const stored = localStorage.getItem('sb-rbjivulozgubrenzwcjx-auth-token');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      token = parsed?.access_token || SUPABASE_ANON_KEY;
+    }
+  }
   
   let url = `${SUPABASE_URL}/rest/v1/${table}`;
   const params = new URLSearchParams();

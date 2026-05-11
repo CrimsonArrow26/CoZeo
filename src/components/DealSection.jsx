@@ -297,18 +297,17 @@ export default function DealSection() {
                 );
               })}
 
+              {/* Progress bar - inside carousel to stay aligned with image */}
+              {totalSlides > 1 && (
+                <div className="deal-section-progress-bar">
+                  <div
+                    key={`progress-${currentIndex}`}
+                    className="deal-section-progress-fill"
+                    style={{ animation: `progressLine ${SLIDE_DURATION}ms linear forwards` }}
+                  />
+                </div>
+              )}
             </div>
-
-            {/* Progress bar - covers entire section */}
-            {totalSlides > 1 && (
-              <div className="deal-section-progress-bar">
-                <div
-                  key={`progress-${currentIndex}`}
-                  className="deal-section-progress-fill"
-                  style={{ animation: `progressLine ${SLIDE_DURATION}ms linear forwards` }}
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
