@@ -36,16 +36,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      // Get initial session
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await Promise.all([
-          fetchProfile(session.user.id, session.access_token),
-          checkAdminRole(session.user.id)
-        ]);
+    // Clear any stale Supabase auth locks from previous sessions
+    try {
+      const lockKey = `lock:sb-rbjivulozgubrenzwcjx-auth-token`;
+      // Navigator locks auto-release when the tab closes, but localStorage
+      // based locks from older supabase-js versions may persist
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.includes('lock') && key.includes('auth-token')) {
+          localStorage.removeItem(key);
+        }
       }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+
+    const initializeAuth = async () => {
+      // Add a timeout so the app doesn't freeze if getSession() hangs
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 8000);
+      });
+
+      const sessionPromise = supabase.auth.getSession().then(async ({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await Promise.all([
+            fetchProfile(session.user.id, session.access_token),
+            checkAdminRole(session.user.id)
+          ]);
+        }
+      }).catch(() => {
+        // getSession failed - likely a lock issue, continue without session
+      });
+
+      // Race between session fetch and timeout
+      await Promise.race([sessionPromise, timeoutPromise]);
       setIsLoading(false);
     };
 
@@ -206,19 +233,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    // Clear local state immediately (non-blocking)
+    // Clear local state immediately
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
+    localStorage.removeItem('cozeo_isAdmin');
     
-    // Fire supabase signOut without awaiting (don't block on network)
-    supabase.auth.signOut().then(({ error }) => {
-      // SignOut completed
-    }).catch(err => {
-      // SignOut exception (non-blocking)
-    });
-    
-    // Return immediately - don't wait for network
+    try {
+      // Await Supabase signOut to ensure session is properly cleared
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Even if signOut fails, force-clear the stored session
+      localStorage.removeItem(`sb-rbjivulozgubrenzwcjx-auth-token`);
+    }
   }
 
   async function resetPassword(email: string) {
