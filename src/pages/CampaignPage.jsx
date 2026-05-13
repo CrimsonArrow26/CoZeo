@@ -18,6 +18,7 @@ export default function CampaignPage() {
   const [customDesignUploaded, setCustomDesignUploaded] = useState(false);
   const [apparelType, setApparelType] = useState('hoodie');
 
+
   // Set default apparel type based on available types
   useEffect(() => {
     if (apparelTypes.length > 0 && !apparelTypes.includes(apparelType)) {
@@ -33,6 +34,17 @@ export default function CampaignPage() {
       setCustomDesignUploaded(true);
     }
   }, [campaign?.id]);
+
+  // Auto add to cart after returning from custom design upload
+  useEffect(() => {
+    if (customDesignUploaded && campaign?.id) {
+      const flag = localStorage.getItem(`campaign_${campaign.id}_autoAddPending`);
+      if (flag === 'true') {
+        localStorage.removeItem(`campaign_${campaign.id}_autoAddPending`);
+        handleAddToCart();
+      }
+    }
+  }, [customDesignUploaded, campaign?.id]);
 
   if (isLoading) {
     return (
@@ -76,6 +88,7 @@ export default function CampaignPage() {
 
   const handleGoToCustomDesign = () => {
     // Navigate to custom design apparel product page with campaign context
+    localStorage.setItem(`campaign_${campaign.id}_autoAddPending`, 'true');
     navigate(`/product/custom-design-apparel?campaign=${campaign.slug}`);
   };
 
@@ -229,7 +242,7 @@ export default function CampaignPage() {
                   </button>
                 )}
                 
-                {/* <button 
+                <button 
                   className="campaign-detail-add-cart"
                   onClick={handleAddToCart}
                   disabled={hasCustomDesign && !customDesignUploaded}
@@ -239,7 +252,7 @@ export default function CampaignPage() {
                     ? 'Upload Design to Continue' 
                     : 'Add Combo to Cart'
                   }
-                </button> */}
+                </button>
                 
                 <Link to="/shop" className="theme-button secondary">
                   Continue Shopping

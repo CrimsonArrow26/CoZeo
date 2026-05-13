@@ -514,7 +514,7 @@ export default function ProductPage() {
                   {/* Print Location Selection */}
                   <div style={{ marginBottom: '20px' }}>
                     <p style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#1a1a1a' }}>
-                      Print Location: (+₹{printPrices.single} per location)
+                      Print Location: (+₹{printPrices.single} per side)
                     </p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {[
