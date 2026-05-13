@@ -1,25 +1,48 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import Header from '../components/Header';
-import { SubscribeSection, Footer } from '../components/SubscribeFooter';
-import { useCart } from '../CartContext';
-import { useAuth } from '../contexts/AuthContext';
-import { useCreateOrder } from '../hooks/useOrders';
-import { useValidateCoupon, recordCouponUsage } from '../hooks/useCoupons';
-import { useCartCampaign } from '../hooks/useCartCampaign';
-import { formatPrice } from '../lib/utils';
-import { openCashfreeCheckout, createCashfreeReceipt } from '../lib/cashfree';
-import { sendOrderConfirmationEmails } from '../services/email.service';
-import { supabase } from '../integrations/supabase/client';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import Header from "../components/Header";
+import { SubscribeSection, Footer } from "../components/SubscribeFooter";
+import { useCart } from "../CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useCreateOrder } from "../hooks/useOrders";
+import { useValidateCoupon, recordCouponUsage } from "../hooks/useCoupons";
+import { useCartCampaign } from "../hooks/useCartCampaign";
+import { formatPrice } from "../lib/utils";
+import { openCashfreeCheckout, createCashfreeReceipt } from "../lib/cashfree";
+import { sendOrderConfirmationEmails } from "../services/email.service";
+import { supabase } from "../integrations/supabase/client";
+import { toast } from "sonner";
 
 const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
 ];
 
 export default function CheckoutPage() {
@@ -28,82 +51,90 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const createOrder = useCreateOrder();
-  
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: profile?.name || '',
-    email: user?.email || '',
-    phone: profile?.phone || '',
-    address: profile?.address || '',
-    city: profile?.city || '',
-    state: profile?.state || '',
-    pincode: profile?.pincode || '',
-    notes: '',
+    name: profile?.name || "",
+    email: user?.email || "",
+    phone: profile?.phone || "",
+    address: profile?.address || "",
+    city: profile?.city || "",
+    state: profile?.state || "",
+    pincode: profile?.pincode || "",
+    notes: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   // Populate form when profile data arrives (may not be available on first render)
   useEffect(() => {
     if (profile || user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        name: profile?.name || prev.name || '',
-        email: user?.email || prev.email || '',
-        phone: profile?.phone || prev.phone || '',
-        address: profile?.address || prev.address || '',
-        city: profile?.city || prev.city || '',
-        state: profile?.state || prev.state || '',
-        pincode: profile?.pincode || prev.pincode || '',
+        name: profile?.name || prev.name || "",
+        email: user?.email || prev.email || "",
+        phone: profile?.phone || prev.phone || "",
+        address: profile?.address || prev.address || "",
+        city: profile?.city || prev.city || "",
+        state: profile?.state || prev.state || "",
+        pincode: profile?.pincode || prev.pincode || "",
       }));
     }
   }, [profile, user]);
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const validateCoupon = useValidateCoupon();
-  
+
   // Campaign discount detection
-  const { campaign, campaignSavings, campaignTotal } = useCartCampaign(cartItems);
+  const { campaign, campaignSavings, campaignTotal } =
+    useCartCampaign(cartItems);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
-      toast.error('Please enter a coupon code');
+      toast.error("Please enter a coupon code");
       return;
     }
-    
+
     try {
-      const result = await validateCoupon.mutateAsync(couponCode.trim().toUpperCase());
+      const result = await validateCoupon.mutateAsync(
+        couponCode.trim().toUpperCase(),
+      );
       if (result.valid) {
         setAppliedCoupon(result.coupon);
         toast.success(`Coupon applied! ${result.coupon.value}% discount`);
       } else {
-        toast.error(result.message || 'Invalid coupon code');
+        toast.error(result.message || "Invalid coupon code");
       }
     } catch (error) {
-      toast.error('Failed to validate coupon');
+      toast.error("Failed to validate coupon");
     }
   };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
-    setCouponCode('');
-    toast.info('Coupon removed');
+    setCouponCode("");
+    toast.info("Coupon removed");
   };
 
-  const discountAmount = appliedCoupon 
-    ? Math.round(subtotal * (appliedCoupon.value / 100)) 
-    : campaignSavings || 0;
-  const finalTotal = campaignTotal || (subtotal - discountAmount);
+  const discountAmount = appliedCoupon
+    ? Math.round(subtotal * (appliedCoupon.value / 100))
+    : 0;
+  // When a campaign applies, the true saving is subtotal minus the fixed combo price
+  const campaignActualSavings =
+    campaign && campaignTotal != null
+      ? Math.max(0, subtotal - campaignTotal)
+      : 0;
+  const finalTotal = campaignTotal ?? subtotal - discountAmount;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePlaceOrder = async () => {
     if (isSubmitting) return;
     if (!user) {
-      toast.error('Please login to place an order');
+      toast.error("Please login to place an order");
       return;
     }
 
@@ -113,7 +144,7 @@ export default function CheckoutPage() {
     const saveShippingAddressToProfile = async () => {
       try {
         const { error } = await supabase
-          .from('profiles')
+          .from("profiles")
           .update({
             name: formData.name,
             email: formData.email,
@@ -123,20 +154,20 @@ export default function CheckoutPage() {
             state: formData.state,
             pincode: formData.pincode,
           })
-          .eq('id', user.id);
+          .eq("id", user.id);
       } catch (err) {
         // Silently fail - address save is non-critical
       }
     };
 
     // Handle Cashfree payment (UPI or Card)
-    if (paymentMethod === 'cashfree_upi' || paymentMethod === 'cashfree_card') {
+    if (paymentMethod === "cashfree_upi" || paymentMethod === "cashfree_card") {
       try {
         // First create the order in pending state
-        const orderItems = cartItems.map(item => ({
+        const orderItems = cartItems.map((item) => ({
           product_id: item.id,
           product_name: item.name,
-          product_image: item.images?.[0] || '/images/placeholder.jpg',
+          product_image: item.images?.[0] || "/images/placeholder.jpg",
           size: item.size,
           color: item.color || null,
           quantity: item.qty,
@@ -161,7 +192,7 @@ export default function CheckoutPage() {
             campaign_id: !appliedCoupon && campaign ? campaign.id : null,
             total: finalTotal,
             payment_method: paymentMethod,
-            payment_status: 'pending',
+            payment_status: "pending",
             shipping_name: formData.name,
             shipping_email: formData.email,
             shipping_phone: formData.phone,
@@ -178,35 +209,37 @@ export default function CheckoutPage() {
         openCashfreeCheckout({
           amount: finalTotal,
           orderId: order.id,
-          userEmail: user.email || '',
-          userName: profile?.name || formData.name || '',
-          userPhone: formData.phone || '',
+          userEmail: user.email || "",
+          userName: profile?.name || formData.name || "",
+          userPhone: formData.phone || "",
           onSuccess: async (paymentId, cashfreeOrderId) => {
             // Update order status to paid
             const { error: updateError } = await supabase
-              .from('orders')
-              .update({ 
-                payment_status: 'paid',
-                status: 'confirmed',
+              .from("orders")
+              .update({
+                payment_status: "paid",
+                status: "confirmed",
                 cashfree_payment_id: paymentId,
-                cashfree_order_id: cashfreeOrderId
+                cashfree_order_id: cashfreeOrderId,
               })
-              .eq('id', order.id);
-            
+              .eq("id", order.id);
+
             if (updateError) {
-              toast.error('Payment succeeded but order update failed. Contact support.');
+              toast.error(
+                "Payment succeeded but order update failed. Contact support.",
+              );
             } else {
-              toast.success('Payment successful!');
-              
+              toast.success("Payment successful!");
+
               // Generate Cashfree Receipt after successful payment
               try {
                 const receiptResult = await createCashfreeReceipt(
                   order.id,
                   cashfreeOrderId,
-                  user.email || '',
-                  profile?.name || formData.name || '',
-                  formData.phone || '',
-                  orderItems.map(item => ({
+                  user.email || "",
+                  profile?.name || formData.name || "",
+                  formData.phone || "",
+                  orderItems.map((item) => ({
                     product_name: item.product_name,
                     unit_price: item.unit_price,
                     quantity: item.quantity,
@@ -221,49 +254,56 @@ export default function CheckoutPage() {
                     city: formData.city,
                     state: formData.state,
                     pincode: formData.pincode,
-                  }
+                  },
                 );
-                
+
                 if (receiptResult.success) {
                   // Store receipt details in the order
                   await supabase
-                    .from('orders')
+                    .from("orders")
                     .update({
                       cashfree_receipt_id: receiptResult.receipt_id,
                       cashfree_receipt_number: receiptResult.receipt_number,
                       cashfree_receipt_url: receiptResult.receipt_url,
                     })
-                    .eq('id', order.id);
-                  toast.success('Receipt generated successfully!');
+                    .eq("id", order.id);
+                  toast.success("Receipt generated successfully!");
                 }
               } catch (receiptError) {
                 // Don't block the flow if receipt generation fails
               }
-              
+
               // Save shipping address to profile for future orders
               await saveShippingAddressToProfile();
-              
+
               // Fetch fresh data to confirm update
               const { data: updatedOrder } = await supabase
-                .from('orders')
-                .select('id, status, payment_status, display_id')
-                .eq('id', order.id)
+                .from("orders")
+                .select("id, status, payment_status, display_id")
+                .eq("id", order.id)
                 .single();
-              
+
               // Update cache immediately with new status
-              queryClient.setQueryData(['orders', 'detail', order.id], (oldData) => {
-                if (oldData) {
-                  return { ...oldData, payment_status: 'paid', status: 'confirmed' };
-                }
-                return oldData;
-              });
+              queryClient.setQueryData(
+                ["orders", "detail", order.id],
+                (oldData) => {
+                  if (oldData) {
+                    return {
+                      ...oldData,
+                      payment_status: "paid",
+                      status: "confirmed",
+                    };
+                  }
+                  return oldData;
+                },
+              );
               // Also update this order in the list cache
-              queryClient.setQueryData(['orders', 'list'], (oldData) => {
+              queryClient.setQueryData(["orders", "list"], (oldData) => {
                 if (oldData && Array.isArray(oldData)) {
-                  return oldData.map(o => 
-                    o.id === order.id 
-                      ? { ...o, payment_status: 'paid', status: 'confirmed' }
-                      : o
+                  return oldData.map((o) =>
+                    o.id === order.id
+                      ? { ...o, payment_status: "paid", status: "confirmed" }
+                      : o,
                   );
                 }
                 return oldData;
@@ -274,49 +314,52 @@ export default function CheckoutPage() {
                 await sendOrderConfirmationEmails({
                   customerEmail: formData.email,
                   customerName: formData.name,
-                  orderId: updatedOrder?.display_id || order.display_id || order.id,
+                  orderId:
+                    updatedOrder?.display_id || order.display_id || order.id,
                   orderDate: new Date().toLocaleDateString(),
-                  items: orderItems.map(item => ({
+                  items: orderItems.map((item) => ({
                     name: item.product_name,
                     quantity: item.quantity,
                     price: item.total_price || item.unit_price,
                   })),
                   total: finalTotal,
                   shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
-                  paymentMethod: paymentMethod === 'cashfree_card' ? 'Credit/Debit Card' : 'UPI',
+                  paymentMethod:
+                    paymentMethod === "cashfree_card"
+                      ? "Credit/Debit Card"
+                      : "UPI",
                 });
               } catch (emailError) {
                 // Don't block the flow if email fails
               }
-
             }
-            
+
             // Record coupon usage
             if (appliedCoupon) {
               await recordCouponUsage(appliedCoupon.id, user.id, order.id);
             }
-            
+
             clearCart();
             navigate(`/order-confirmation/${order.id}`);
           },
           onError: async (error) => {
-            toast.error('Payment failed: ' + error.message);
+            toast.error("Payment failed: " + error.message);
             // Cancel the pending order since payment failed
             try {
               await supabase
-                .from('orders')
-                .update({ 
-                  payment_status: 'failed',
-                  status: 'cancelled'
+                .from("orders")
+                .update({
+                  payment_status: "failed",
+                  status: "cancelled",
                 })
-                .eq('id', order.id);
+                .eq("id", order.id);
             } catch (cancelError) {
               // Silent fail - order remains pending but payment failed
             }
           },
         });
       } catch (error) {
-        toast.error('Failed to initiate payment. Please try again.');
+        toast.error("Failed to initiate payment. Please try again.");
         setIsSubmitting(false);
         return;
       }
@@ -324,12 +367,12 @@ export default function CheckoutPage() {
     }
 
     // Handle COD (existing logic)
-    const orderItems = cartItems.map(item => ({
+    const orderItems = cartItems.map((item) => ({
       product_id: item.id,
       product_name: item.name,
-      product_image: item.images?.[0] || '/images/placeholder.jpg',
+      product_image: item.images?.[0] || "/images/placeholder.jpg",
       size: item.size,
-      color: item.color || 'Black',
+      color: item.color || "Black",
       quantity: item.qty,
       unit_price: item.price,
       total_price: item.price * item.qty,
@@ -368,11 +411,11 @@ export default function CheckoutPage() {
       try {
         const receiptResult = await createCashfreeReceipt(
           order.id,
-          'COD-' + Date.now(),
+          "COD-" + Date.now(),
           formData.email,
           formData.name,
           formData.phone,
-          orderItems.map(item => ({
+          orderItems.map((item) => ({
             product_name: item.product_name,
             unit_price: item.unit_price,
             quantity: item.quantity,
@@ -387,19 +430,19 @@ export default function CheckoutPage() {
             city: formData.city,
             state: formData.state,
             pincode: formData.pincode,
-          }
+          },
         );
-        
+
         if (receiptResult.success) {
           // Store receipt details in the order
           await supabase
-            .from('orders')
+            .from("orders")
             .update({
               cashfree_receipt_id: receiptResult.receipt_id,
               cashfree_receipt_number: receiptResult.receipt_number,
               cashfree_receipt_url: receiptResult.receipt_url,
             })
-            .eq('id', order.id);
+            .eq("id", order.id);
         }
       } catch (receiptError) {
         // Don't block the flow if receipt generation fails
@@ -412,14 +455,14 @@ export default function CheckoutPage() {
           customerName: formData.name,
           orderId: order.display_id || order.id,
           orderDate: new Date().toLocaleDateString(),
-          items: orderItems.map(item => ({
+          items: orderItems.map((item) => ({
             name: item.product_name,
             quantity: item.quantity,
             price: item.total_price || item.unit_price,
           })),
           total: finalTotal,
           shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
-          paymentMethod: 'Cash on Delivery',
+          paymentMethod: "Cash on Delivery",
         });
       } catch (emailError) {
         // Don't block the flow if email fails
@@ -434,10 +477,10 @@ export default function CheckoutPage() {
       }
 
       clearCart();
-      toast.success('Order placed successfully!');
+      toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
     } catch (error) {
-      toast.error('Failed to place order. Please try again.');
+      toast.error("Failed to place order. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -462,18 +505,79 @@ export default function CheckoutPage() {
     );
   }
 
+  // ── Full-screen loading overlay ───────────────────────────────────────────
+  if (isSubmitting) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          background: "rgba(255,255,255,0.97)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "28px",
+        }}
+      >
+        {/* Animated ring spinner */}
+        <div
+          style={{
+            width: "64px",
+            height: "64px",
+            borderRadius: "50%",
+            border: "5px solid #e5e7eb",
+            borderTopColor: "#1a1a1a",
+            animation: "spin 0.85s linear infinite",
+          }}
+        />
+
+        {/* Text */}
+        <div style={{ textAlign: "center" }}>
+          <p
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#1a1a1a",
+              margin: "0 0 8px",
+            }}
+          >
+            Placing your order…
+          </p>
+          <p
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontSize: "13px",
+              color: "#6b7280",
+              margin: 0,
+            }}
+          >
+            Please don't close this page
+          </p>
+        </div>
+
+        {/* Inline keyframes */}
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="page-wrapper">
       <Header />
-      
+
       <div className="section _100px">
         <div className="container">
           <div className="breadcrumb-link-block">
-            <Link to="/" className="breadcrumb-link">Home</Link>
+            <Link to="/" className="breadcrumb-link">
+              Home
+            </Link>
             <span className="breadcrumb-separator">/</span>
             <span className="breadcrumb-current">Checkout</span>
           </div>
-          
+
           <h1 className="page-title">Checkout</h1>
 
           <div className="checkout-layout">
@@ -521,7 +625,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="form-group">
                       <label>Address *</label>
                       <textarea
@@ -568,8 +672,10 @@ export default function CheckoutPage() {
                         required
                       >
                         <option value="">Select State</option>
-                        {INDIAN_STATES.map(state => (
-                          <option key={state} value={state}>{state}</option>
+                        {INDIAN_STATES.map((state) => (
+                          <option key={state} value={state}>
+                            {state}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -592,21 +698,30 @@ export default function CheckoutPage() {
               {step === 2 && (
                 <div className="checkout-step">
                   <h2>Payment Method</h2>
-                  
+
                   <div className="payment-methods">
-                    <label className={`payment-method ${paymentMethod === 'cod' ? 'selected' : ''}`}>
+                    <label
+                      className={`payment-method ${paymentMethod === "cod" ? "selected" : ""}`}
+                    >
                       <input
                         type="radio"
                         name="payment"
                         value="cod"
-                        checked={paymentMethod === 'cod'}
-                        onChange={() => setPaymentMethod('cod')}
+                        checked={paymentMethod === "cod"}
+                        onChange={() => setPaymentMethod("cod")}
                       />
                       <div className="payment-icon cod">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="2" y="6" width="20" height="12" rx="2"/>
-                          <circle cx="12" cy="12" r="3"/>
-                          <path d="M7 12h.01M17 12h.01"/>
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect x="2" y="6" width="20" height="12" rx="2" />
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M7 12h.01M17 12h.01" />
                         </svg>
                       </div>
                       <div className="payment-info">
@@ -615,18 +730,27 @@ export default function CheckoutPage() {
                       </div>
                     </label>
 
-                    <label className={`payment-method ${paymentMethod === 'cashfree_upi' ? 'selected' : ''}`}>
+                    <label
+                      className={`payment-method ${paymentMethod === "cashfree_upi" ? "selected" : ""}`}
+                    >
                       <input
                         type="radio"
                         name="payment"
                         value="cashfree_upi"
-                        checked={paymentMethod === 'cashfree_upi'}
-                        onChange={() => setPaymentMethod('cashfree_upi')}
+                        checked={paymentMethod === "cashfree_upi"}
+                        onChange={() => setPaymentMethod("cashfree_upi")}
                       />
                       <div className="payment-icon upi">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="4" width="18" height="16" rx="2"/>
-                          <path d="M12 8v8M8 12h8"/>
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect x="3" y="4" width="18" height="16" rx="2" />
+                          <path d="M12 8v8M8 12h8" />
                         </svg>
                       </div>
                       <div className="payment-info">
@@ -635,18 +759,27 @@ export default function CheckoutPage() {
                       </div>
                     </label>
 
-                    <label className={`payment-method ${paymentMethod === 'cashfree_card' ? 'selected' : ''}`}>
+                    <label
+                      className={`payment-method ${paymentMethod === "cashfree_card" ? "selected" : ""}`}
+                    >
                       <input
                         type="radio"
                         name="payment"
                         value="cashfree_card"
-                        checked={paymentMethod === 'cashfree_card'}
-                        onChange={() => setPaymentMethod('cashfree_card')}
+                        checked={paymentMethod === "cashfree_card"}
+                        onChange={() => setPaymentMethod("cashfree_card")}
                       />
                       <div className="payment-icon card">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="2" y="5" width="20" height="14" rx="2"/>
-                          <line x1="2" y1="10" x2="22" y2="10"/>
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
                         </svg>
                       </div>
                       <div className="payment-info">
@@ -657,20 +790,22 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="checkout-actions">
-                    <button 
+                    <button
                       type="button"
                       className="checkout-back-btn"
                       onClick={() => setStep(1)}
                     >
                       Back to Shipping
                     </button>
-                    <button 
+                    <button
                       type="button"
                       className="checkout-place-btn"
                       onClick={handlePlaceOrder}
                       disabled={createOrder.isPending}
                     >
-                      {createOrder.isPending ? 'Placing Order...' : 'Place Order'}
+                      {createOrder.isPending
+                        ? "Placing Order..."
+                        : "Place Order"}
                     </button>
                   </div>
                 </div>
@@ -681,26 +816,35 @@ export default function CheckoutPage() {
             <div className="checkout-sidebar">
               <h3>Order Summary</h3>
               <div className="order-items">
-                {cartItems.map(item => (
+                {cartItems.map((item) => (
                   <div key={`${item.id}-${item.size}`} className="order-item">
-                    <img src={item.images?.[0] || '/images/placeholder.jpg'} alt={item.name} />
+                    <img
+                      src={item.images?.[0] || "/images/placeholder.jpg"}
+                      alt={item.name}
+                    />
                     <div className="order-item-info">
                       <p className="order-item-name">{item.name}</p>
-                      <p className="order-item-meta">Size: {item.size} × {item.qty}</p>
+                      <p className="order-item-meta">
+                        Size: {item.size} × {item.qty}
+                      </p>
                     </div>
-                    <span className="order-item-price">{formatPrice(item.price * item.qty)}</span>
+                    <span className="order-item-price">
+                      {formatPrice(item.price * item.qty)}
+                    </span>
                   </div>
                 ))}
               </div>
-              
+
               <div className="order-totals">
                 {appliedCoupon && (
                   <div className="applied-coupon">
                     <div className="coupon-badge">
                       <span className="coupon-code">{appliedCoupon.code}</span>
-                      <span className="coupon-discount">{appliedCoupon.value}% OFF</span>
-                      <button 
-                        type="button" 
+                      <span className="coupon-discount">
+                        {appliedCoupon.value}% OFF
+                      </span>
+                      <button
+                        type="button"
                         className="remove-coupon-btn"
                         onClick={handleRemoveCoupon}
                         title="Remove coupon"
@@ -710,7 +854,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {!appliedCoupon && (
                   <div className="coupon-section">
                     <div className="coupon-input-row">
@@ -720,42 +864,71 @@ export default function CheckoutPage() {
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
                         className="coupon-input"
-                        onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleApplyCoupon()
+                        }
                       />
-                      <button 
+                      <button
                         type="button"
                         className="apply-coupon-btn"
                         onClick={handleApplyCoupon}
-                        disabled={validateCoupon.isPending || !couponCode.trim()}
+                        disabled={
+                          validateCoupon.isPending || !couponCode.trim()
+                        }
                       >
-                        {validateCoupon.isPending ? '...' : 'Apply'}
+                        {validateCoupon.isPending ? "..." : "Apply"}
                       </button>
                     </div>
                   </div>
                 )}
-                
-                <div className="order-row">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
+
+                {/* Subtotal — dimmed when campaign applies */}
+                <div
+                  className="order-row"
+                  style={campaign ? { opacity: 0.55 } : {}}
+                >
+                  <span
+                    style={campaign ? { textDecoration: "line-through" } : {}}
+                  >
+                    Subtotal
+                  </span>
+                  <span
+                    style={
+                      campaign
+                        ? { textDecoration: "line-through", color: "#999" }
+                        : {}
+                    }
+                  >
+                    {formatPrice(subtotal)}
+                  </span>
                 </div>
-                
+
+                {/* Coupon discount */}
                 {appliedCoupon && (
                   <div className="order-row discount">
                     <span>Discount ({appliedCoupon.value}%)</span>
-                    <span className="discount-amount">-{formatPrice(discountAmount)}</span>
-                  </div>
-                )}
-                
-                {!appliedCoupon && campaign && (
-                  <div className="order-row discount campaign-discount">
-                    <span>
-                      <span className="campaign-badge">Campaign</span>
-                      {campaign.name}
+                    <span className="discount-amount">
+                      -{formatPrice(discountAmount)}
                     </span>
-                    <span className="discount-amount">-{formatPrice(campaignSavings)}</span>
                   </div>
                 )}
-                
+
+                {/* Campaign rows — same style as other order-rows */}
+                {!appliedCoupon && campaign && campaignTotal != null && (
+                  <>
+                    <div className="order-row">
+                      <span style={{ color: "#16a34a" }}>Deal saving</span>
+                      <span style={{ color: "#16a34a" }}>
+                        -{formatPrice(campaignActualSavings)}
+                      </span>
+                    </div>
+                    <div className="order-row" style={{ fontWeight: 700 }}>
+                      <span>Offer Total</span>
+                      <span>{formatPrice(campaignTotal)}</span>
+                    </div>
+                  </>
+                )}
+
                 <div className="order-row">
                   <span>Shipping</span>
                   <span>Free</span>
@@ -764,39 +937,39 @@ export default function CheckoutPage() {
                   <span>Total</span>
                   <span>{formatPrice(finalTotal)}</span>
                 </div>
-                
+
                 {step === 1 && (
-                  <button 
+                  <button
                     type="button"
                     className="checkout-continue-btn"
                     onClick={() => {
                       // Validate required fields
                       if (!formData.name.trim()) {
-                        toast.error('Please enter your full name');
+                        toast.error("Please enter your full name");
                         return;
                       }
                       if (!formData.email.trim()) {
-                        toast.error('Please enter your email');
+                        toast.error("Please enter your email");
                         return;
                       }
                       if (!formData.phone.trim()) {
-                        toast.error('Please enter your phone number');
+                        toast.error("Please enter your phone number");
                         return;
                       }
                       if (!formData.address.trim()) {
-                        toast.error('Please enter your address');
+                        toast.error("Please enter your address");
                         return;
                       }
                       if (!formData.city.trim()) {
-                        toast.error('Please enter your city');
+                        toast.error("Please enter your city");
                         return;
                       }
                       if (!formData.state) {
-                        toast.error('Please select your state');
+                        toast.error("Please select your state");
                         return;
                       }
                       if (!formData.pincode.trim()) {
-                        toast.error('Please enter your pincode');
+                        toast.error("Please enter your pincode");
                         return;
                       }
                       setStep(2);

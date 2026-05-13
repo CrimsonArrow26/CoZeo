@@ -1,24 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useCart } from '../CartContext';
-import { useAuth } from '../contexts/AuthContext';
-import { useCartCampaign } from '../hooks/useCartCampaign';
-import { formatPrice } from '../lib/utils';
-import { toast } from 'sonner';
-import CustomDesignUploader from './CustomDesignUploader';
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useCart } from "../CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useCartCampaign } from "../hooks/useCartCampaign";
+import { formatPrice } from "../lib/utils";
+import { toast } from "sonner";
 
 function CartSidebar({ onClose }) {
-  const { cartItems, removeFromCart, updateQty, updateCartItemCustomDesign, subtotal } = useCart();
-  const { campaign } = useCartCampaign(cartItems);
+  const { cartItems, removeFromCart, updateQty, subtotal } = useCart();
+  const { campaign, campaignTotal, campaignSavings } =
+    useCartCampaign(cartItems);
   const cartContainerRef = useRef(null);
-  
-  // Check if item is part of an active campaign
-  const isCampaignItem = (itemId) => {
-    if (!campaign) return false;
-    const campaignProducts = campaign.campaign_products || [];
-    return campaignProducts.some(cp => cp.product_id === itemId && !cp.is_custom_design_slot);
-  };
-  
+
   // Handle backdrop click
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -26,31 +19,48 @@ function CartSidebar({ onClose }) {
     }
   };
 
-  // Prevent scroll events from bubbling to body
+  // Stop wheel/touch events from bubbling up to Lenis so the cart
+  // panel scrolls natively when the mouse is over it.
   useEffect(() => {
     const container = cartContainerRef.current;
     if (!container) return;
-
-    const preventScroll = (e) => {
-      e.stopPropagation();
-    };
-
-    container.addEventListener('wheel', preventScroll, { passive: false });
-    container.addEventListener('touchmove', preventScroll, { passive: false });
-
+    const stop = (e) => e.stopPropagation();
+    container.addEventListener("wheel", stop, { passive: false });
+    container.addEventListener("touchmove", stop, { passive: false });
     return () => {
-      container.removeEventListener('wheel', preventScroll);
-      container.removeEventListener('touchmove', preventScroll);
+      container.removeEventListener("wheel", stop);
+      container.removeEventListener("touchmove", stop);
     };
   }, []);
-  
+
   return (
-    <div className="w-commerce-commercecartcontainerwrapper w-commerce-commercecartcontainerwrapper--cartType-rightSidebar" style={{ display: 'flex' }} onClick={handleBackdropClick}>
-      <div ref={cartContainerRef} className="w-commerce-commercecartcontainer" role="dialog" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="w-commerce-commercecartcontainerwrapper w-commerce-commercecartcontainerwrapper--cartType-rightSidebar"
+      style={{ display: "flex" }}
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={cartContainerRef}
+        className="w-commerce-commercecartcontainer"
+        role="dialog"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="w-commerce-commercecartheader">
-          <h3 className="w-commerce-commercecartheading cart-title">Your Cart</h3>
-          <a className="w-commerce-commercecartcloselink close-button w-inline-block" role="button" onClick={onClose}>
-            <svg width="16px" height="16px" viewBox="0 0 16 16"><g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd"><g fillRule="nonzero" fill="#333333"><polygon points="6.23223305 8 0.616116524 13.6161165 2.38388348 15.3838835 8 9.76776695 13.6161165 15.3838835 15.3838835 13.6161165 9.76776695 8 15.3838835 2.38388348 13.6161165 0.616116524 8 6.23223305 2.38388348 0.616116524 0.616116524 2.38388348 6.23223305 8"></polygon></g></g></svg>
+          <h3 className="w-commerce-commercecartheading cart-title">
+            Your Cart
+          </h3>
+          <a
+            className="w-commerce-commercecartcloselink close-button w-inline-block"
+            role="button"
+            onClick={onClose}
+          >
+            <svg width="16px" height="16px" viewBox="0 0 16 16">
+              <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
+                <g fillRule="nonzero" fill="#333333">
+                  <polygon points="6.23223305 8 0.616116524 13.6161165 2.38388348 15.3838835 8 9.76776695 13.6161165 15.3838835 15.3838835 13.6161165 9.76776695 8 15.3838835 2.38388348 13.6161165 0.616116524 8 6.23223305 2.38388348 0.616116524 0.616116524 2.38388348 6.23223305 8"></polygon>
+                </g>
+              </g>
+            </svg>
           </a>
         </div>
         <div className="w-commerce-commercecartformwrapper">
@@ -59,63 +69,243 @@ function CartSidebar({ onClose }) {
               <div>No items found.</div>
             </div>
           ) : (
-            <form className="w-commerce-commercecartform" style={{ display: 'block' }}>
+            <form
+              className="w-commerce-commercecartform"
+              style={{ display: "block" }}
+            >
               <div className="w-commerce-commercecartlist">
-                {cartItems.map(item => (
-                  <div key={`${item.id}-${item.size}-${item.color || 'default'}`} className="w-commerce-commercecartitem cart-item">
-                    <Link to={`/product/${item.slug || item.id}`} className="w-commerce-commercecartitemimage-link">
-                      <img src={item.images?.[0] || '/images/placeholder.jpg'} alt={item.name} className="w-commerce-commercecartitemimage" />
+                {cartItems.map((item) => (
+                  <div
+                    key={`${item.id}-${item.size}-${item.color || "default"}`}
+                    className="w-commerce-commercecartitem cart-item"
+                  >
+                    <Link
+                      to={`/product/${item.slug || item.id}`}
+                      className="w-commerce-commercecartitemimage-link"
+                    >
+                      <img
+                        src={item.images?.[0] || "/images/placeholder.jpg"}
+                        alt={item.name}
+                        className="w-commerce-commercecartitemimage"
+                      />
                     </Link>
                     <div className="w-commerce-commercecartiteminfo">
-                      <Link to={`/product/${item.slug || item.id}`} className="w-commerce-commercecartproductname cart-product-title">
+                      <Link
+                        to={`/product/${item.slug || item.id}`}
+                        className="w-commerce-commercecartproductname cart-product-title"
+                      >
                         {item.name}
                       </Link>
-                      <div className="cart-price">{formatPrice(item.price * item.qty)}</div>
+                      <div className="cart-price">
+                        {formatPrice(item.price * item.qty)}
+                      </div>
                       <ul className="w-commerce-commercecartoptionlist">
-                        <li className="cart-size"><span>Size: {item.size}</span></li>
-                        {item.color && <li className="cart-size"><span>Color: {item.color}</span></li>}
+                        <li className="cart-size">
+                          <span>Size: {item.size}</span>
+                        </li>
+                        {item.color && (
+                          <li className="cart-size">
+                            <span>Color: {item.color}</span>
+                          </li>
+                        )}
                       </ul>
-                      <a href="#" className="cart-product-remove w-inline-block" onClick={e => { e.preventDefault(); removeFromCart(item.id, item.size, item.color); }}>
+                      <a
+                        href="#"
+                        className="cart-product-remove w-inline-block"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          removeFromCart(item.id, item.size, item.color);
+                        }}
+                      >
                         <div className="cart-remove">Remove</div>
                       </a>
-                      
-                      {/* Custom Design Upload for Campaign Items */}
-                      {isCampaignItem(item.id) && campaign?.campaign_products?.some(cp => cp.is_custom_design_slot) && (
-                        <div className="cart-custom-design">
-                          <CustomDesignUploader
-                            label="Upload Custom Design"
-                            existingImage={item.custom_design?.url}
-                            onUploadComplete={(design) => updateCartItemCustomDesign(item.id, item.size, design)}
-                            onClear={() => updateCartItemCustomDesign(item.id, item.size, null)}
-                          />
-                        </div>
-                      )}
+
+                      {/* Show custom design preview for items that already have a design */}
+                      {item.is_custom_design &&
+                        (item.custom_design_front ||
+                          item.custom_design_back) && (
+                          <div
+                            style={{
+                              marginTop: "8px",
+                              display: "flex",
+                              gap: "6px",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {item.custom_design_front && (
+                              <div style={{ position: "relative" }}>
+                                <img
+                                  src={item.custom_design_front}
+                                  alt="Front design"
+                                  style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    objectFit: "cover",
+                                    borderRadius: "6px",
+                                    border: "1px solid #e5e7eb",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    color: "#6b7280",
+                                    display: "block",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  Front
+                                </span>
+                              </div>
+                            )}
+                            {item.custom_design_back && (
+                              <div style={{ position: "relative" }}>
+                                <img
+                                  src={item.custom_design_back}
+                                  alt="Back design"
+                                  style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    objectFit: "cover",
+                                    borderRadius: "6px",
+                                    border: "1px solid #e5e7eb",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    color: "#6b7280",
+                                    display: "block",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  Back
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                     </div>
                     <div className="cart-quantity-wrapper">
                       <div className="quantity-stepper">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           className="qty-btn minus"
-                          onClick={() => updateQty(item.id, item.size, item.qty - 1, item.color)}
-                        >−</button>
+                          onClick={() =>
+                            updateQty(
+                              item.id,
+                              item.size,
+                              item.qty - 1,
+                              item.color,
+                            )
+                          }
+                        >
+                          −
+                        </button>
                         <span className="qty-value">{item.qty}</span>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           className="qty-btn plus"
-                          onClick={() => updateQty(item.id, item.size, item.qty + 1, item.color)}
-                        >+</button>
+                          onClick={() =>
+                            updateQty(
+                              item.id,
+                              item.size,
+                              item.qty + 1,
+                              item.color,
+                            )
+                          }
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="w-commerce-commercecartfooter cart-footer">
-                <div className="w-commerce-commercecartlineitem">
-                  <div className="cart-product-text">Subtotal</div>
-                  <div className="w-commerce-commercecartordervalue cart-total-price">{formatPrice(subtotal)}</div>
+                {/* Subtotal row */}
+                <div
+                  className="w-commerce-commercecartlineitem"
+                  style={campaign ? { opacity: 0.55 } : {}}
+                >
+                  <div
+                    className="cart-product-text"
+                    style={campaign ? { textDecoration: "line-through" } : {}}
+                  >
+                    Subtotal
+                  </div>
+                  <div
+                    className="w-commerce-commercecartordervalue cart-total-price"
+                    style={
+                      campaign
+                        ? { textDecoration: "line-through", color: "#999" }
+                        : {}
+                    }
+                  >
+                    {formatPrice(subtotal)}
+                  </div>
                 </div>
+
+                {/* Campaign rows — same style as subtotal */}
+                {campaign && campaignTotal != null && (
+                  <>
+                    <div className="w-commerce-commercecartlineitem">
+                      <div
+                        className="cart-product-text"
+                        style={{ color: "#16a34a" }}
+                      >
+                        Deal saving
+                      </div>
+                      <div
+                        className="w-commerce-commercecartordervalue cart-total-price"
+                        style={{ color: "#16a34a" }}
+                      >
+                        -{formatPrice(campaignSavings)}
+                      </div>
+                    </div>
+                    <div className="w-commerce-commercecartlineitem">
+                      <div
+                        className="cart-product-text"
+                        style={{ fontWeight: 700 }}
+                      >
+                        Offer Total
+                      </div>
+                      <div
+                        className="w-commerce-commercecartordervalue cart-total-price"
+                        style={{ fontWeight: 700 }}
+                      >
+                        {formatPrice(campaignTotal)}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* If no campaign, show a plain total */}
+                {!campaign && (
+                  <div
+                    className="w-commerce-commercecartlineitem"
+                    style={{ borderTop: "1px solid #eee", paddingTop: "8px" }}
+                  >
+                    <div
+                      className="cart-product-text"
+                      style={{ fontWeight: 700 }}
+                    >
+                      Total
+                    </div>
+                    <div
+                      className="w-commerce-commercecartordervalue cart-total-price"
+                      style={{ fontWeight: 700 }}
+                    >
+                      {formatPrice(subtotal)}
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <Link to="/checkout" className="w-commerce-commercecartcheckoutbutton checkout-button" onClick={onClose}>
+                  <Link
+                    to="/checkout"
+                    className="w-commerce-commercecartcheckoutbutton checkout-button"
+                    onClick={onClose}
+                  >
                     Continue to Checkout
                   </Link>
                 </div>
@@ -129,33 +319,37 @@ function CartSidebar({ onClose }) {
 }
 
 function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Please fill in all fields');
+      toast.error("Please fill in all fields");
       return;
     }
-    
+
     setIsLoading(true);
-    
-    const result = isSignup 
+
+    const result = isSignup
       ? await onLogin.signUp(email, password, name)
       : await onLogin.signIn(email, password);
-    
+
     if (result.error) {
       toast.error(result.error.message);
     } else {
-      toast.success(isSignup ? 'Account created! Please check your email.' : 'Welcome back!');
+      toast.success(
+        isSignup
+          ? "Account created! Please check your email."
+          : "Welcome back!",
+      );
       if (!isSignup) onClose();
     }
-    
+
     setIsLoading(false);
   };
 
@@ -171,61 +365,79 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     if (!resetEmail) {
-      toast.error('Please enter your email address');
+      toast.error("Please enter your email address");
       return;
     }
-    
+
     setIsLoading(true);
     const result = await resetPassword(resetEmail);
-    
+
     if (result.error) {
       toast.error(result.error.message);
     } else {
-      toast.success('Password reset email sent! Check your inbox.');
+      toast.success("Password reset email sent! Check your inbox.");
       setIsForgotPassword(false);
-      setResetEmail('');
+      setResetEmail("");
     }
-    
+
     setIsLoading(false);
   };
 
   return (
-    <div className={isSignup ? "account-signup-sidebar open" : "account-login-sidebar open"}>
+    <div
+      className={
+        isSignup ? "account-signup-sidebar open" : "account-login-sidebar open"
+      }
+    >
       <div className="account-sidebar-header">
-        <p className="account-sidebar-header-text">{isSignup ? 'Create Account' : 'Sign in'}</p>
+        <p className="account-sidebar-header-text">
+          {isSignup ? "Create Account" : "Sign in"}
+        </p>
         <div className="account-sidebar-close-btn" onClick={onClose}>
-          <img src="/images/close.png" alt="" className="account-sidebar-close-icon" />
+          <img
+            src="/images/close.png"
+            alt=""
+            className="account-sidebar-close-icon"
+          />
           <p className="account-sidebar-close-text">Close</p>
         </div>
       </div>
       <div className="account-sidebar-form-box">
         <div className="account-login-form-block w-form">
           {isForgotPassword ? (
-            <form className="account-login-form" onSubmit={handleForgotPassword}>
+            <form
+              className="account-login-form"
+              onSubmit={handleForgotPassword}
+            >
               <div className="account-login-form-group">
                 <label className="account-login-label">Email address *</label>
-                <input 
-                  className="account-login-input w-input" 
-                  type="email" 
-                  required 
+                <input
+                  className="account-login-input w-input"
+                  type="email"
+                  required
                   value={resetEmail}
-                  onChange={e => setResetEmail(e.target.value)}
+                  onChange={(e) => setResetEmail(e.target.value)}
                   placeholder="Enter your email to reset password"
                 />
               </div>
-              <input 
-                type="submit" 
-                className="account-login-btn w-button" 
-                value={isLoading ? 'Sending...' : 'Send Reset Link'}
+              <input
+                type="submit"
+                className="account-login-btn w-button"
+                value={isLoading ? "Sending..." : "Send Reset Link"}
                 disabled={isLoading}
               />
-              <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <a 
-                  href="#" 
-                  className="account-login-forget-pass-link w-inline-block" 
-                  onClick={e => { e.preventDefault(); setIsForgotPassword(false); }}
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                <a
+                  href="#"
+                  className="account-login-forget-pass-link w-inline-block"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsForgotPassword(false);
+                  }}
                 >
-                  <p className="account-login-forget-pass-text">← Back to login</p>
+                  <p className="account-login-forget-pass-text">
+                    ← Back to login
+                  </p>
                 </a>
               </div>
             </form>
@@ -234,64 +446,93 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
               {isSignup && (
                 <div className="account-login-form-group">
                   <label className="account-login-label">Full Name *</label>
-                  <input 
-                    className="account-login-input w-input" 
-                    type="text" 
-                    required 
+                  <input
+                    className="account-login-input w-input"
+                    type="text"
+                    required
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your full name"
                   />
                 </div>
               )}
               <div className="account-login-form-group">
                 <label className="account-login-label">Email address *</label>
-                <input 
-                  className="account-login-input w-input" 
-                  type="email" 
-                  required 
+                <input
+                  className="account-login-input w-input"
+                  type="email"
+                  required
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                 />
               </div>
               <div className="account-login-form-group">
                 <label className="account-login-label">Password *</label>
-                <input 
-                  className="account-login-input w-input" 
-                  type="password" 
-                  required 
+                <input
+                  className="account-login-input w-input"
+                  type="password"
+                  required
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   minLength={6}
                 />
               </div>
-              <input 
-                type="submit" 
-                className="account-login-btn w-button" 
-                value={isLoading ? 'Please wait...' : (isSignup ? 'Sign Up' : 'Log in')}
+              <input
+                type="submit"
+                className="account-login-btn w-button"
+                value={
+                  isLoading ? "Please wait..." : isSignup ? "Sign Up" : "Log in"
+                }
                 disabled={isLoading}
               />
               {!isSignup && (
                 <div className="account-login-form-footer">
                   <label className="w-checkbox account-login-checkbox-field">
-                    <input type="checkbox" className="w-checkbox-input account-login-checkbox" />
-                    <span className="account-login-checkbox-label w-form-label">Remember me</span>
+                    <input
+                      type="checkbox"
+                      className="w-checkbox-input account-login-checkbox"
+                    />
+                    <span className="account-login-checkbox-label w-form-label">
+                      Remember me
+                    </span>
                   </label>
-                  <a href="#" className="account-login-forget-pass-link w-inline-block" onClick={e => { e.preventDefault(); setIsForgotPassword(true); }}>
-                    <p className="account-login-forget-pass-text">Lost your password?</p>
+                  <a
+                    href="#"
+                    className="account-login-forget-pass-link w-inline-block"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsForgotPassword(true);
+                    }}
+                  >
+                    <p className="account-login-forget-pass-text">
+                      Lost your password?
+                    </p>
                   </a>
                 </div>
               )}
               <div className="account-login-dvider-box">
                 <div className="account-login-dvider"></div>
-                <p className="account-login-dvider-text">Or {isSignup ? 'Signup' : 'login'} with</p>
+                <p className="account-login-dvider-text">
+                  Or {isSignup ? "Signup" : "login"} with
+                </p>
                 <div className="account-login-dvider"></div>
               </div>
               <div className="account-login-social-box">
-                <a href="#" className="account-login-social-button google w-inline-block" onClick={e => { e.preventDefault(); handleGoogleSignIn(); }}>
-                  <img src="/images/google.avif" alt="" className="account-login-social-button-icon" />
+                <a
+                  href="#"
+                  className="account-login-social-button google w-inline-block"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleGoogleSignIn();
+                  }}
+                >
+                  <img
+                    src="/images/google.avif"
+                    alt=""
+                    className="account-login-social-button-icon"
+                  />
                   <div className="account-login-social-button-text">Google</div>
                 </a>
               </div>
@@ -300,10 +541,16 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
         </div>
       </div>
       <div className="account-sidebar-footer">
-        <img src="/images/user-20-2--1.avif" alt="" className="account-sidebar-footer-icon" />
-        <p className="account-sidebar-footer-text">{isSignup ? 'Already have an account?' : 'No account yet?'}</p>
+        <img
+          src="/images/user-20-2--1.avif"
+          alt=""
+          className="account-sidebar-footer-icon"
+        />
+        <p className="account-sidebar-footer-text">
+          {isSignup ? "Already have an account?" : "No account yet?"}
+        </p>
         <p className="account-sidebar-footer-link-text" onClick={onToggle}>
-          {isSignup ? 'Login Account' : 'Create an Account'}
+          {isSignup ? "Login Account" : "Create an Account"}
         </p>
       </div>
     </div>
@@ -312,39 +559,80 @@ function LoginSidebar({ isSignup, onClose, onToggle, onLogin, resetPassword }) {
 
 function UserDropdown({ user, profile, isAdmin, onSignOut }) {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
 
   return (
     <div className="user-dropdown">
       <div className="account-login-button" onClick={() => setIsOpen(!isOpen)}>
-        <img src="/images/user-20-2-.avif" alt="" className="account-login-icon" />
+        <img
+          src="/images/user-20-2-.avif"
+          alt=""
+          className="account-login-icon"
+        />
       </div>
       {isOpen && (
         <div className="user-dropdown-menu">
           <div className="dropdown-header">
-            <p className="dropdown-name">{profile?.name || 'User'}</p>
+            <p className="dropdown-name">{profile?.name || "User"}</p>
             <p className="dropdown-email">{user.email}</p>
           </div>
           <div className="dropdown-links">
-            <Link to="/dashboard" className="dropdown-link" onClick={() => setIsOpen(false)}>Dashboard</Link>
-            <Link to="/dashboard?tab=orders" className="dropdown-link" onClick={() => setIsOpen(false)}>My Orders</Link>
+            <Link
+              to="/dashboard"
+              className="dropdown-link"
+              onClick={() => setIsOpen(false)}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/dashboard?tab=orders"
+              className="dropdown-link"
+              onClick={() => setIsOpen(false)}
+            >
+              My Orders
+            </Link>
             {isAdmin && (
-              <Link to="/admin" className="dropdown-link admin-link" onClick={() => setIsOpen(false)}>Admin Panel</Link>
+              <Link
+                to="/admin"
+                className="dropdown-link admin-link"
+                onClick={() => setIsOpen(false)}
+              >
+                Admin Panel
+              </Link>
             )}
-            <button className="dropdown-link sign-out" onClick={() => { onSignOut(); setIsOpen(false); }}>
+            <button
+              className="dropdown-link sign-out"
+              onClick={() => {
+                onSignOut();
+                setIsOpen(false);
+              }}
+            >
               Sign Out
             </button>
           </div>
         </div>
       )}
-      {isOpen && <div className="dropdown-overlay" onClick={() => setIsOpen(false)}></div>}
+      {isOpen && (
+        <div
+          className="dropdown-overlay"
+          onClick={() => setIsOpen(false)}
+        ></div>
+      )}
     </div>
   );
 }
 
 export default function Header() {
   const { totalItems, cartOpen, setCartOpen } = useCart();
-  const { user, profile, isAdmin, signIn, signUp, signInWithGoogle, signOut, resetPassword } = useAuth();
+  const {
+    user,
+    profile,
+    isAdmin,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signOut,
+    resetPassword,
+  } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
@@ -361,47 +649,50 @@ export default function Header() {
   const scrollTo = (e, id) => {
     e.preventDefault();
     setMobileOpen(false);
-    if (location.pathname !== '/') {
+    if (location.pathname !== "/") {
       navigate(`/#${id}`);
       return;
     }
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    document.body.style.overflow = (cartOpen || loginOpen || mobileOpen) ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.overflow =
+      cartOpen || loginOpen || mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [cartOpen, loginOpen, mobileOpen]);
 
   // Scroll to section after navigating from another page with a hash
   useEffect(() => {
-    if (location.pathname === '/' && location.hash) {
-      const id = location.hash.replace('#', '');
+    if (location.pathname === "/" && location.hash) {
+      const id = location.hash.replace("#", "");
       // Wait for DOM to render before scrolling
       const timer = setTimeout(() => {
         const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (el) el.scrollIntoView({ behavior: "smooth" });
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [location]);
 
   const scrollItems = [
-    { id: 'Hero-Section', label: 'Home' },
-    { id: 'About-Section', label: 'About Us' },
-    { id: 'Featured-Section', label: 'Collection' },
-    { id: 'Category-Section', label: 'Category' },
+    { id: "Hero-Section", label: "Home" },
+    { id: "About-Section", label: "About Us" },
+    { id: "Featured-Section", label: "Collection" },
+    { id: "Category-Section", label: "Category" },
   ];
 
-  const routeItems = [
-    { to: '/shop', label: 'Shop' },
-  ];
+  const routeItems = [{ to: "/shop", label: "Shop" }];
 
   return (
     <>
       <div className="header-top">
-        <p className="header-top-text">CoZeo - Streetwear for the Bold, Built for the Movement</p>
+        <p className="header-top-text">
+          CoZeo - Streetwear for the Bold, Built for the Movement
+        </p>
       </div>
       <header className={`main-header${scrolled ? " scrolled" : ""}`}>
         <div className="w-layout-blockcontainer container w-container">
@@ -411,33 +702,80 @@ export default function Header() {
             </Link>
             <div className="header-menu-box">
               {scrollItems.map((item) => (
-                <a key={item.id} className="header-menu-link w-inline-block" onClick={(e) => scrollTo(e, item.id)} href="#" style={{ cursor: 'pointer' }}>
+                <a
+                  key={item.id}
+                  className="header-menu-link w-inline-block"
+                  onClick={(e) => scrollTo(e, item.id)}
+                  href="#"
+                  style={{ cursor: "pointer" }}
+                >
                   <p className="header-menu-text">{item.label}</p>
                 </a>
               ))}
               {routeItems.map((item) => (
-                <Link key={item.to} to={item.to} className="header-menu-link w-inline-block">
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="header-menu-link w-inline-block"
+                >
                   <p className="header-menu-text">{item.label}</p>
                 </Link>
               ))}
             </div>
             <div className="header-btn-box">
               <div className="w-commerce-commercecartwrapper shopping-cart">
-                <a className="w-commerce-commercecartopenlink shopping-cart-btn w-inline-block" role="button" onClick={() => setCartOpen(true)} href="#">
-                  <img src="/images/shopping-cart-20-1-.avif" alt="" className="shopping-cart-icon" />
-                  <div className="w-commerce-commercecartopenlinkcount shopping-cart-quantity">{totalItems}</div>
+                <a
+                  className="w-commerce-commercecartopenlink shopping-cart-btn w-inline-block"
+                  role="button"
+                  onClick={() => setCartOpen(true)}
+                  href="#"
+                >
+                  <img
+                    src="/images/shopping-cart-20-1-.avif"
+                    alt=""
+                    className="shopping-cart-icon"
+                  />
+                  <div className="w-commerce-commercecartopenlinkcount shopping-cart-quantity">
+                    {totalItems}
+                  </div>
                 </a>
                 {cartOpen && <CartSidebar onClose={() => setCartOpen(false)} />}
               </div>
               {user ? (
-                <UserDropdown user={user} profile={profile} isAdmin={isAdmin} onSignOut={signOut} />
+                <UserDropdown
+                  user={user}
+                  profile={profile}
+                  isAdmin={isAdmin}
+                  onSignOut={signOut}
+                />
               ) : (
-                <div className="account-login-button" onClick={() => { setLoginOpen(true); setIsSignup(false); }}>
-                  <img src="/images/user-20-2-.avif" alt="" className="account-login-icon" />
+                <div
+                  className="account-login-button"
+                  onClick={() => {
+                    setLoginOpen(true);
+                    setIsSignup(false);
+                  }}
+                >
+                  <img
+                    src="/images/user-20-2-.avif"
+                    alt=""
+                    className="account-login-icon"
+                  />
                 </div>
               )}
-              <div className="mobile-menu-open-btn" onClick={() => setMobileOpen(true)}>
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <div
+                className="mobile-menu-open-btn"
+                onClick={() => setMobileOpen(true)}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
                   <line x1="3" y1="12" x2="21" y2="12"></line>
                   <line x1="3" y1="6" x2="21" y2="6"></line>
                   <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -448,61 +786,128 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu - Redesigned */}
-        <div className={`mobile-menu-container ${mobileOpen ? 'active' : ''}`}>
-          <div className="mobile-menu-backdrop" onClick={() => setMobileOpen(false)}></div>
+        <div className={`mobile-menu-container ${mobileOpen ? "active" : ""}`}>
+          <div
+            className="mobile-menu-backdrop"
+            onClick={() => setMobileOpen(false)}
+          ></div>
           <div className="mobile-menu-panel">
             <div className="mobile-menu-header">
-              <Link to="/" className="mobile-menu-logo" onClick={() => setMobileOpen(false)}>
+              <Link
+                to="/"
+                className="mobile-menu-logo"
+                onClick={() => setMobileOpen(false)}
+              >
                 CoZeo
               </Link>
-              <button className="mobile-menu-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <button
+                className="mobile-menu-close"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
             </div>
-            
+
             <div className="mobile-menu-content">
-              {location.pathname.startsWith('/admin') ? (
+              {location.pathname.startsWith("/admin") ? (
                 <nav className="mobile-menu-nav">
-                  <Link to="/admin" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/admin"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Overview</span>
                   </Link>
-                  <Link to="/admin/products" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/admin/products"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Products</span>
                   </Link>
-                  <Link to="/admin/orders" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/admin/orders"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Orders</span>
                   </Link>
-                  <Link to="/admin/coupons" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/admin/coupons"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Coupons</span>
                   </Link>
-                  <Link to="/admin/campaigns" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/admin/campaigns"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Campaigns</span>
                   </Link>
-                  <Link to="/admin?tab=settings" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/admin?tab=settings"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Settings</span>
                   </Link>
-                  <Link to="/" className="mobile-nav-link mobile-admin-back" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/"
+                    className="mobile-nav-link mobile-admin-back"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>← Back to Main Menu</span>
                   </Link>
                 </nav>
               ) : (
                 <nav className="mobile-menu-nav">
-                  <Link to="/" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Home</span>
                   </Link>
-                  <Link to="/shop" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                  <Link
+                    to="/shop"
+                    className="mobile-nav-link"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <span>Shop</span>
                   </Link>
-                  <a href="#About-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'About-Section')}>
+                  <a
+                    href="#About-Section"
+                    className="mobile-nav-link"
+                    onClick={(e) => scrollTo(e, "About-Section")}
+                  >
                     <span>About Us</span>
                   </a>
-                  <a href="#Featured-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Featured-Section')}>
+                  <a
+                    href="#Featured-Section"
+                    className="mobile-nav-link"
+                    onClick={(e) => scrollTo(e, "Featured-Section")}
+                  >
                     <span>Collection</span>
                   </a>
-                  <a href="#Category-Section" className="mobile-nav-link" onClick={(e) => scrollTo(e, 'Category-Section')}>
+                  <a
+                    href="#Category-Section"
+                    className="mobile-nav-link"
+                    onClick={(e) => scrollTo(e, "Category-Section")}
+                  >
                     <span>Categories</span>
                   </a>
                 </nav>
@@ -513,15 +918,23 @@ export default function Header() {
               {user ? (
                 <div className="mobile-user-info">
                   <div className="mobile-user-avatar">
-                    {profile?.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                    {profile?.name?.charAt(0) || user.email?.charAt(0) || "U"}
                   </div>
                   <div className="mobile-user-details">
-                    <p className="mobile-user-name">{profile?.name || 'User'}</p>
+                    <p className="mobile-user-name">
+                      {profile?.name || "User"}
+                    </p>
                     <p className="mobile-user-email">{user.email}</p>
                   </div>
                 </div>
               ) : (
-                <button className="mobile-menu-btn" onClick={() => { setMobileOpen(false); setLoginOpen(true); }}>
+                <button
+                  className="mobile-menu-btn"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setLoginOpen(true);
+                  }}
+                >
                   Sign In
                 </button>
               )}
@@ -535,15 +948,18 @@ export default function Header() {
             <LoginSidebar
               isSignup={isSignup}
               onClose={() => setLoginOpen(false)}
-              onToggle={() => setIsSignup(p => !p)}
+              onToggle={() => setIsSignup((p) => !p)}
               onLogin={{ signIn, signUp, signInWithGoogle }}
               resetPassword={resetPassword}
             />
-            <div className="bg account-sidebar-overlay" onClick={() => setLoginOpen(false)}></div>
+            <div
+              className="bg account-sidebar-overlay"
+              onClick={() => setLoginOpen(false)}
+            ></div>
           </>
         )}
       </header>
-      <div style={{ marginBottom: '40px' }}></div>
+      <div style={{ marginBottom: "40px" }}></div>
     </>
   );
 }
