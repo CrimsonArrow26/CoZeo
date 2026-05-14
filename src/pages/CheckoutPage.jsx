@@ -63,7 +63,7 @@ export default function CheckoutPage() {
     pincode: profile?.pincode || "",
     notes: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("cashfree_upi");
 
   // Populate form when profile data arrives (may not be available on first render)
   useEffect(() => {
@@ -702,6 +702,12 @@ export default function CheckoutPage() {
                   <div className="payment-methods">
                     <label
                       className={`payment-method ${paymentMethod === "cod" ? "selected" : ""}`}
+                      style={{
+                        opacity: 0.45,
+                        cursor: "not-allowed",
+                        filter: "grayscale(100%)",
+                      }}
+                      title="Cash on Delivery is temporarily unavailable"
                     >
                       <input
                         type="radio"
@@ -709,6 +715,7 @@ export default function CheckoutPage() {
                         value="cod"
                         checked={paymentMethod === "cod"}
                         onChange={() => setPaymentMethod("cod")}
+                        disabled
                       />
                       <div className="payment-icon cod">
                         <svg
@@ -726,7 +733,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="payment-info">
                         <strong>Cash on Delivery</strong>
-                        <span>Pay when your order arrives</span>
+                        <span>Temporarily unavailable</span>
                       </div>
                     </label>
 
