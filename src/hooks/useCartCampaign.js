@@ -1,10 +1,9 @@
-import { useMemo } from "react";
 import { useActiveCampaigns } from "./useCampaigns";
 
 export function useCartCampaign(cartItems) {
   const { data: campaigns, isLoading } = useActiveCampaigns();
 
-  const applicableCampaign = useMemo(() => {
+  const applicableCampaign = (() => {
     if (
       !campaigns ||
       campaigns.length === 0 ||
@@ -85,7 +84,7 @@ export function useCartCampaign(cartItems) {
     }
 
     return null;
-  }, [campaigns, cartItems]);
+  })();
 
   const campaignSavings = applicableCampaign?.campaignDiscount || 0;
   const campaignTotal = applicableCampaign
