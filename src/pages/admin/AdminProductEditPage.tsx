@@ -1,51 +1,69 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import Header from '../../components/Header';
-import { Footer } from '../../components/SubscribeFooter';
-import { useProduct, productKeys } from '../../hooks/useProducts';
-import { ArrowLeft, Plus, X, Save, Trash2, Image as ImageIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { formatPrice } from '../../lib/utils';
-import { supabase } from '../../integrations/supabase/client';
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import Header from "../../components/Header";
+import { Footer } from "../../components/SubscribeFooter";
+import { useProduct, productKeys } from "../../hooks/useProducts";
+import {
+  ArrowLeft,
+  Plus,
+  X,
+  Save,
+  Trash2,
+  Image as ImageIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { formatPrice } from "../../lib/utils";
+import { supabase } from "../../integrations/supabase/client";
 
-const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
-const CATEGORIES = ['man', 'woman', 'unisex'];
-const BADGES = ['sale', 'drop', 'new'];
-const COLORS = ['Black', 'White', 'Gray', 'Navy', 'Red', 'Blue', 'Green', 'Beige', 'Brown', 'Pink'];
+const SIZES = ["S", "M", "L", "XL", "XXL"];
+const CATEGORIES = ["man", "woman", "unisex"];
+const BADGES = ["sale", "drop", "new"];
+const COLORS = [
+  "Black",
+  "White",
+  "Gray",
+  "Navy",
+  "Red",
+  "Blue",
+  "Green",
+  "Beige",
+  "Brown",
+  "Pink",
+];
 
 export default function AdminProductEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: product, isLoading } = useProduct(id || '');
+  const { data: product, isLoading } = useProduct(id || "");
   const [isSaving, setIsSaving] = useState(false);
-  const [customColor, setCustomColor] = useState('');
+  const [customColor, setCustomColor] = useState("");
   const prevImagesRef = useRef<string[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    long_description: '',
+    name: "",
+    slug: "",
+    description: "",
+    long_description: "",
     price: 0,
     discount_price: null as number | null,
     stock: 0,
-    category: 'man',
+    category: "man",
     badge: null as string | null,
     images: [] as string[],
     image_color_mappings: [] as { image_url: string; color: string }[],
     sizes: [] as string[],
     colors: [] as string[],
     specs: {
-      fabric_type: '',
-      fit_style: '',
-      neckline: '',
-      sleeve_length: '',
-      pattern: '',
-      finish: '',
-      care_instructions: '',
+      fabric_type: "",
+      fit_style: "",
+      neckline: "",
+      sleeve_length: "",
+      pattern: "",
+      finish: "",
+      care_instructions: "",
     },
     rating: 0,
     review_count: 0,
@@ -58,27 +76,29 @@ export default function AdminProductEditPage() {
   useEffect(() => {
     if (product) {
       setFormData({
-        name: product.name || '',
-        slug: product.slug || '',
-        description: product.description || '',
-        long_description: product.long_description || '',
+        name: product.name || "",
+        slug: product.slug || "",
+        description: product.description || "",
+        long_description: product.long_description || "",
         price: product.price || 0,
         discount_price: product.discount_price,
         stock: product.stock || 0,
-        category: product.category || 'man',
+        category: product.category || "man",
         badge: product.badge,
         images: product.images || [],
         image_color_mappings: product.image_color_mappings || [],
         sizes: product.sizes || [],
-        colors: (product.colors || []).filter((c: string) => COLORS.includes(c)),
+        colors: (product.colors || []).filter((c: string) =>
+          COLORS.includes(c),
+        ),
         specs: {
-          fabric_type: product.specs?.fabric_type || '',
-          fit_style: product.specs?.fit_style || '',
-          neckline: product.specs?.neckline || '',
-          sleeve_length: product.specs?.sleeve_length || '',
-          pattern: product.specs?.pattern || '',
-          finish: product.specs?.finish || '',
-          care_instructions: product.specs?.care_instructions || '',
+          fabric_type: product.specs?.fabric_type || "",
+          fit_style: product.specs?.fit_style || "",
+          neckline: product.specs?.neckline || "",
+          sleeve_length: product.specs?.sleeve_length || "",
+          pattern: product.specs?.pattern || "",
+          finish: product.specs?.finish || "",
+          care_instructions: product.specs?.care_instructions || "",
         },
         rating: product.rating || 0,
         review_count: product.review_count || 0,
@@ -93,153 +113,182 @@ export default function AdminProductEditPage() {
   useEffect(() => {
     const currentImages = formData.images || [];
     const prevImages = prevImagesRef.current;
-    
+
     // Only run if images array actually changed
     if (JSON.stringify(currentImages) !== JSON.stringify(prevImages)) {
       prevImagesRef.current = [...currentImages];
-      
-      setFormData(prev => {
+
+      setFormData((prev) => {
         const currentMappings = prev.image_color_mappings || [];
-        
+
         // Find images that don't have a mapping entry
-        const existingUrls = new Set(currentMappings.map(m => m.image_url));
+        const existingUrls = new Set(currentMappings.map((m) => m.image_url));
         const newMappings = currentImages
-          .filter(img => !existingUrls.has(img))
-          .map(img => ({ image_url: img, color: '' }));
-        
+          .filter((img) => !existingUrls.has(img))
+          .map((img) => ({ image_url: img, color: "" }));
+
         // If there are new images without mappings, add them
         if (newMappings.length > 0) {
           return {
             ...prev,
-            image_color_mappings: [...currentMappings, ...newMappings]
+            image_color_mappings: [...currentMappings, ...newMappings],
           };
         }
-        
+
         // Also clean up mappings for images that no longer exist
-        const validMappings = currentMappings.filter(m => currentImages.includes(m.image_url));
+        const validMappings = currentMappings.filter((m) =>
+          currentImages.includes(m.image_url),
+        );
         if (validMappings.length !== currentMappings.length) {
           return {
             ...prev,
-            image_color_mappings: validMappings
+            image_color_mappings: validMappings,
           };
         }
-        
+
         return prev;
       });
     }
   }, [formData.images]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSpecChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      specs: { ...prev.specs, [field]: value }
+      specs: { ...prev.specs, [field]: value },
     }));
   };
 
   const handleImageAdd = () => {
-    const url = prompt('Enter image URL:');
+    const url = prompt("Enter image URL:");
     if (url && url.trim()) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         images: [...prev.images, url.trim()],
         // Add mapping with no color initially
-        image_color_mappings: [...prev.image_color_mappings, { image_url: url.trim(), color: '' }]
+        image_color_mappings: [
+          ...prev.image_color_mappings,
+          { image_url: url.trim(), color: "" },
+        ],
       }));
     }
   };
 
   const handleImageRemove = (index: number) => {
     const removedImage = formData.images[index];
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
       // Also remove the color mapping for this image
-      image_color_mappings: prev.image_color_mappings.filter(m => m.image_url !== removedImage)
+      image_color_mappings: prev.image_color_mappings.filter(
+        (m) => m.image_url !== removedImage,
+      ),
     }));
   };
 
   const handleImageColorChange = (imageUrl: string, color: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      image_color_mappings: prev.image_color_mappings.map(m => 
-        m.image_url === imageUrl ? { ...m, color } : m
-      )
+      image_color_mappings: prev.image_color_mappings.map((m) =>
+        m.image_url === imageUrl ? { ...m, color } : m,
+      ),
     }));
   };
 
   const toggleSize = (size: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       sizes: prev.sizes.includes(size)
-        ? prev.sizes.filter(s => s !== size)
-        : [...prev.sizes, size]
+        ? prev.sizes.filter((s) => s !== size)
+        : [...prev.sizes, size],
     }));
   };
 
   const toggleColor = (color: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       colors: prev.colors.includes(color)
-        ? prev.colors.filter(c => c !== color)
-        : [...prev.colors, color]
+        ? prev.colors.filter((c) => c !== color)
+        : [...prev.colors, color],
     }));
   };
 
   const handleAddCustomColor = () => {
     const trimmedColor = customColor.trim();
     if (trimmedColor && !formData.colors.includes(trimmedColor)) {
-      setFormData(prev => ({ ...prev, colors: [...prev.colors, trimmedColor] }));
-      setCustomColor('');
+      setFormData((prev) => ({
+        ...prev,
+        colors: [...prev.colors, trimmedColor],
+      }));
+      setCustomColor("");
     }
   };
 
   const removeColor = (color: string) => {
-    setFormData(prev => ({ ...prev, colors: prev.colors.filter(c => c !== color) }));
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((c) => c !== color),
+    }));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
       if (id && !product?.id) {
-        throw new Error('Product ID not loaded yet');
+        throw new Error("Product ID not loaded yet");
       }
-      
-      const { error } = id && product?.id
-        ? await supabase.from('products').update(formData).eq('id', product.id)
-        : await supabase.from('products').insert(formData).select().single();
-      
+
+      const { error } =
+        id && product?.id
+          ? await supabase
+              .from("products")
+              .update(formData)
+              .eq("id", product.id)
+          : await supabase.from("products").insert(formData).select().single();
+
       if (error) throw error;
-      
+
       // Invalidate all product queries to refresh cache across the site
       await queryClient.invalidateQueries({ queryKey: productKeys.all });
-      
-      toast.success(id ? 'Product saved successfully' : 'Product created successfully');
-      navigate('/admin/products');
+
+      toast.success(
+        id ? "Product saved successfully" : "Product created successfully",
+      );
+      navigate("/admin/products");
     } catch (error: any) {
-      toast.error('Failed to save product: ' + (error?.message || 'Unknown error'));
+      toast.error(
+        "Failed to save product: " + (error?.message || "Unknown error"),
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
-    
+    if (
+      !confirm(
+        "Are you sure you want to delete this product? This action cannot be undone.",
+      )
+    )
+      return;
+
     try {
-      const { error } = await supabase.from('products').delete().eq('id', product?.id);
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", product?.id);
       if (error) throw error;
-      
+
       // Invalidate all product queries after delete
       await queryClient.invalidateQueries({ queryKey: productKeys.all });
-      
-      toast.success('Product deleted successfully');
-      navigate('/admin/products');
+
+      toast.success("Product deleted successfully");
+      navigate("/admin/products");
     } catch (error) {
-      toast.error('Failed to delete product');
+      toast.error("Failed to delete product");
     }
   };
 
@@ -263,8 +312,8 @@ export default function AdminProductEditPage() {
   return (
     <div className="page-wrapper">
       <Header />
-      
-      <div className="section" style={{ padding: '40px 0' }}>
+
+      <div className="section" style={{ padding: "40px 0" }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           {/* Header */}
           <div className="admin-header" style={{ marginBottom: 32 }}>
@@ -273,11 +322,11 @@ export default function AdminProductEditPage() {
               Back to Products
             </Link>
             <h1 style={{ fontSize: 28, fontWeight: 700 }}>
-              {id ? 'Edit Product' : 'Add Product'}
+              {id ? "Edit Product" : "Add Product"}
             </h1>
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ display: "flex", gap: 12 }}>
               {id && (
-                <button 
+                <button
                   className="icon-btn delete"
                   onClick={handleDelete}
                   title="Delete Product"
@@ -285,18 +334,30 @@ export default function AdminProductEditPage() {
                   <Trash2 size={18} />
                 </button>
               )}
-              <button 
+              <button
                 className="primary-button"
                 onClick={handleSave}
                 disabled={isSaving}
               >
                 <Save size={18} />
-                {isSaving ? 'Saving...' : (id ? 'Save Changes' : 'Create Product')}
+                {isSaving
+                  ? "Saving..."
+                  : id
+                    ? "Save Changes"
+                    : "Create Product"}
               </button>
             </div>
           </div>
 
-          <div className="product-edit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 40, alignItems: 'start' }}>
+          <div
+            className="product-edit-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 400px",
+              gap: 40,
+              alignItems: "start",
+            }}
+          >
             {/* Left Column - Form */}
             <div className="admin-section">
               {/* Basic Info */}
@@ -305,19 +366,23 @@ export default function AdminProductEditPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Product Name *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       placeholder="Enter product name"
                     />
                   </div>
                   <div className="form-group">
                     <label>Slug *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.slug}
-                      onChange={(e) => handleInputChange('slug', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("slug", e.target.value)
+                      }
                       placeholder="product-url-slug"
                     />
                   </div>
@@ -325,19 +390,23 @@ export default function AdminProductEditPage() {
 
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Short Description</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("description", e.target.value)
+                    }
                     placeholder="Brief product description"
                   />
                 </div>
 
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Long Description</label>
-                  <textarea 
+                  <textarea
                     value={formData.long_description}
-                    onChange={(e) => handleInputChange('long_description', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("long_description", e.target.value)
+                    }
                     placeholder="Detailed product description"
                     rows={4}
                   />
@@ -350,28 +419,51 @@ export default function AdminProductEditPage() {
                 <div className="form-row three-col">
                   <div className="form-group">
                     <label>Price (₹) *</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
                       value={formData.price}
-                      onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "price",
+                          Math.max(0, parseFloat(e.target.value) || 0),
+                        )
+                      }
                       placeholder="0"
                     />
                   </div>
                   <div className="form-group">
                     <label>Discount Price (₹)</label>
-                    <input 
-                      type="number" 
-                      value={formData.discount_price || ''}
-                      onChange={(e) => handleInputChange('discount_price', e.target.value ? parseFloat(e.target.value) : null)}
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.discount_price || ""}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "discount_price",
+                          e.target.value
+                            ? Math.max(0, parseFloat(e.target.value))
+                            : null,
+                        )
+                      }
                       placeholder="Optional"
                     />
                   </div>
                   <div className="form-group">
                     <label>Stock *</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
                       value={formData.stock}
-                      onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "stock",
+                          Math.max(0, parseInt(e.target.value) || 0),
+                        )
+                      }
                       placeholder="0"
                     />
                   </div>
@@ -384,24 +476,32 @@ export default function AdminProductEditPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Category *</label>
-                    <select 
+                    <select
                       value={formData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("category", e.target.value)
+                      }
                     >
-                      {CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className="form-group">
                     <label>Badge</label>
-                    <select 
-                      value={formData.badge || ''}
-                      onChange={(e) => handleInputChange('badge', e.target.value || null)}
+                    <select
+                      value={formData.badge || ""}
+                      onChange={(e) =>
+                        handleInputChange("badge", e.target.value || null)
+                      }
                     >
                       <option value="">None</option>
-                      {BADGES.map(badge => (
-                        <option key={badge} value={badge}>{badge.charAt(0).toUpperCase() + badge.slice(1)}</option>
+                      {BADGES.map((badge) => (
+                        <option key={badge} value={badge}>
+                          {badge.charAt(0).toUpperCase() + badge.slice(1)}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -410,9 +510,16 @@ export default function AdminProductEditPage() {
 
               {/* Images */}
               <div className="coupon-form">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
                   <h3>Product Images</h3>
-                  <button 
+                  <button
                     type="button"
                     className="apply-coupon-btn"
                     onClick={handleImageAdd}
@@ -421,88 +528,133 @@ export default function AdminProductEditPage() {
                     Add Image
                   </button>
                 </div>
-                <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
-                  Assign a color to each image so customers see the correct images when selecting colors.
+                <p style={{ fontSize: 13, color: "#666", marginBottom: 16 }}>
+                  Assign a color to each image so customers see the correct
+                  images when selecting colors.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(180px, 1fr))",
+                    gap: 16,
+                  }}
+                >
                   {formData.images.map((img, index) => {
                     // Find the color mapping for this image
-                    const mapping = formData.image_color_mappings.find(m => m.image_url === img);
-                    const assignedColor = mapping?.color || '';
-                    
+                    const mapping = formData.image_color_mappings.find(
+                      (m) => m.image_url === img,
+                    );
+                    const assignedColor = mapping?.color || "";
+
                     return (
-                      <div key={index} style={{ 
-                        position: 'relative', 
-                        borderRadius: 8, 
-                        overflow: 'hidden', 
-                        border: '2px solid #e5e5e5',
-                        background: '#fff'
-                      }}>
-                        <div style={{ aspectRatio: '1', position: 'relative' }}>
-                          <img src={img} alt={`Product ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <button 
+                      <div
+                        key={index}
+                        style={{
+                          position: "relative",
+                          borderRadius: 8,
+                          overflow: "hidden",
+                          border: "2px solid #e5e5e5",
+                          background: "#fff",
+                        }}
+                      >
+                        <div style={{ aspectRatio: "1", position: "relative" }}>
+                          <img
+                            src={img}
+                            alt={`Product ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <button
                             onClick={() => handleImageRemove(index)}
-                            style={{ 
-                              position: 'absolute', 
-                              top: 4, 
-                              right: 4, 
-                              width: 28, 
-                              height: 28, 
-                              borderRadius: '50%', 
-                              background: '#ef4444', 
-                              color: '#fff', 
-                              border: 'none', 
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
+                            style={{
+                              position: "absolute",
+                              top: 4,
+                              right: 4,
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              background: "#ef4444",
+                              color: "#fff",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
                             }}
                           >
                             <X size={16} />
                           </button>
                         </div>
-                        
+
                         {/* Color Assignment Dropdown */}
-                        <div style={{ padding: 12, borderTop: '1px solid #e5e5e5' }}>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>
+                        <div
+                          style={{
+                            padding: 12,
+                            borderTop: "1px solid #e5e5e5",
+                          }}
+                        >
+                          <label
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: "#555",
+                              display: "block",
+                              marginBottom: 6,
+                            }}
+                          >
                             Color
                           </label>
                           <select
                             value={assignedColor}
-                            onChange={(e) => handleImageColorChange(img, e.target.value)}
+                            onChange={(e) =>
+                              handleImageColorChange(img, e.target.value)
+                            }
                             style={{
-                              width: '100%',
-                              padding: '8px 10px',
+                              width: "100%",
+                              padding: "8px 10px",
                               borderRadius: 6,
-                              border: '2px solid #e5e5e5',
+                              border: "2px solid #e5e5e5",
                               fontSize: 13,
-                              background: '#fff',
-                              cursor: 'pointer'
+                              background: "#fff",
+                              cursor: "pointer",
                             }}
                           >
                             <option value="">Select color...</option>
                             {formData.colors.map((color) => (
-                              <option key={color} value={color}>{color}</option>
+                              <option key={color} value={color}>
+                                {color}
+                              </option>
                             ))}
                           </select>
                           {assignedColor && (
-                            <div style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: 6, 
-                              marginTop: 8,
-                              fontSize: 12,
-                              color: '#22c55e'
-                            }}>
-                              <span style={{ 
-                                width: 14, 
-                                height: 14, 
-                                borderRadius: '50%', 
-                                background: assignedColor.toLowerCase() === 'white' ? '#fff' : 
-                                          assignedColor.toLowerCase() === 'black' ? '#000' : 
-                                          assignedColor.toLowerCase(),
-                                border: '1px solid #ddd'
-                              }} />
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                marginTop: 8,
+                                fontSize: 12,
+                                color: "#22c55e",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 14,
+                                  height: 14,
+                                  borderRadius: "50%",
+                                  background:
+                                    assignedColor.toLowerCase() === "white"
+                                      ? "#fff"
+                                      : assignedColor.toLowerCase() === "black"
+                                        ? "#000"
+                                        : assignedColor.toLowerCase(),
+                                  border: "1px solid #ddd",
+                                }}
+                              />
                               Assigned: {assignedColor}
                             </div>
                           )}
@@ -511,18 +663,22 @@ export default function AdminProductEditPage() {
                     );
                   })}
                   {formData.images.length === 0 && (
-                    <div style={{ 
-                      aspectRatio: '1', 
-                      borderRadius: 8, 
-                      border: '2px dashed #e5e5e5', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: '#999'
-                    }}>
+                    <div
+                      style={{
+                        aspectRatio: "1",
+                        borderRadius: 8,
+                        border: "2px dashed #e5e5e5",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#999",
+                      }}
+                    >
                       <ImageIcon size={32} />
-                      <span style={{ fontSize: 12, marginTop: 8 }}>No images</span>
+                      <span style={{ fontSize: 12, marginTop: 8 }}>
+                        No images
+                      </span>
                     </div>
                   )}
                 </div>
@@ -531,21 +687,27 @@ export default function AdminProductEditPage() {
               {/* Sizes */}
               <div className="coupon-form">
                 <h3>Available Sizes</h3>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {SIZES.map(size => (
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  {SIZES.map((size) => (
                     <button
                       key={size}
                       type="button"
                       onClick={() => toggleSize(size)}
                       style={{
-                        padding: '12px 24px',
+                        padding: "12px 24px",
                         borderRadius: 8,
-                        border: formData.sizes.includes(size) ? '2px solid #121212' : '2px solid #e5e5e5',
-                        background: formData.sizes.includes(size) ? '#121212' : '#fff',
-                        color: formData.sizes.includes(size) ? '#fff' : '#121212',
-                        cursor: 'pointer',
+                        border: formData.sizes.includes(size)
+                          ? "2px solid #121212"
+                          : "2px solid #e5e5e5",
+                        background: formData.sizes.includes(size)
+                          ? "#121212"
+                          : "#fff",
+                        color: formData.sizes.includes(size)
+                          ? "#fff"
+                          : "#121212",
+                        cursor: "pointer",
                         fontWeight: 600,
-                        transition: 'all 0.2s ease'
+                        transition: "all 0.2s ease",
                       }}
                     >
                       {size}
@@ -557,25 +719,40 @@ export default function AdminProductEditPage() {
               {/* Colors */}
               <div className="coupon-form">
                 <h3>Available Colors</h3>
-                <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Select from preset colors or add custom colors</p>
-                
+                <p style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>
+                  Select from preset colors or add custom colors
+                </p>
+
                 {/* Preset Colors */}
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-                  {COLORS.map(color => (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    marginBottom: 16,
+                  }}
+                >
+                  {COLORS.map((color) => (
                     <button
                       key={color}
                       type="button"
                       onClick={() => toggleColor(color)}
                       style={{
-                        padding: '8px 16px',
+                        padding: "8px 16px",
                         borderRadius: 20,
-                        border: formData.colors.includes(color) ? '2px solid #121212' : '2px solid #e5e5e5',
-                        background: formData.colors.includes(color) ? '#121212' : '#fff',
-                        color: formData.colors.includes(color) ? '#fff' : '#121212',
-                        cursor: 'pointer',
+                        border: formData.colors.includes(color)
+                          ? "2px solid #121212"
+                          : "2px solid #e5e5e5",
+                        background: formData.colors.includes(color)
+                          ? "#121212"
+                          : "#fff",
+                        color: formData.colors.includes(color)
+                          ? "#fff"
+                          : "#121212",
+                        cursor: "pointer",
                         fontWeight: 500,
                         fontSize: 14,
-                        transition: 'all 0.2s ease'
+                        transition: "all 0.2s ease",
                       }}
                     >
                       {color}
@@ -584,37 +761,39 @@ export default function AdminProductEditPage() {
                 </div>
 
                 {/* Custom Color Input */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                   <input
                     type="text"
                     value={customColor}
                     onChange={(e) => setCustomColor(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddCustomColor()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleAddCustomColor()
+                    }
                     placeholder="Enter custom color name..."
                     style={{
                       flex: 1,
-                      padding: '10px 14px',
+                      padding: "10px 14px",
                       borderRadius: 8,
-                      border: '2px solid #e5e5e5',
+                      border: "2px solid #e5e5e5",
                       fontSize: 14,
-                      outline: 'none'
+                      outline: "none",
                     }}
                   />
                   <button
                     type="button"
                     onClick={handleAddCustomColor}
                     style={{
-                      padding: '10px 20px',
+                      padding: "10px 20px",
                       borderRadius: 8,
-                      border: '2px solid #121212',
-                      background: '#121212',
-                      color: '#fff',
-                      cursor: 'pointer',
+                      border: "2px solid #121212",
+                      background: "#121212",
+                      color: "#fff",
+                      cursor: "pointer",
                       fontWeight: 600,
                       fontSize: 14,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
                     <Plus size={16} />
@@ -623,32 +802,37 @@ export default function AdminProductEditPage() {
                 </div>
 
                 {/* Selected Custom Colors */}
-                {formData.colors.filter(c => !COLORS.includes(c)).length > 0 && (
+                {formData.colors.filter((c) => !COLORS.includes(c)).length >
+                  0 && (
                   <div>
-                    <p style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>Custom Colors:</p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {formData.colors.filter(c => !COLORS.includes(c)).map(color => (
-                        <span
-                          key={color}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: 20,
-                            background: '#121212',
-                            color: '#fff',
-                            fontSize: 13,
-                            fontWeight: 500,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => removeColor(color)}
-                          title="Click to remove"
-                        >
-                          {color}
-                          <X size={14} />
-                        </span>
-                      ))}
+                    <p style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>
+                      Custom Colors:
+                    </p>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {formData.colors
+                        .filter((c) => !COLORS.includes(c))
+                        .map((color) => (
+                          <span
+                            key={color}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: 20,
+                              background: "#121212",
+                              color: "#fff",
+                              fontSize: 13,
+                              fontWeight: 500,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              cursor: "pointer",
+                            }}
+                            onClick={() => removeColor(color)}
+                            title="Click to remove"
+                          >
+                            {color}
+                            <X size={14} />
+                          </span>
+                        ))}
                     </div>
                   </div>
                 )}
@@ -660,19 +844,23 @@ export default function AdminProductEditPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Fabric Type</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.specs.fabric_type}
-                      onChange={(e) => handleSpecChange('fabric_type', e.target.value)}
+                      onChange={(e) =>
+                        handleSpecChange("fabric_type", e.target.value)
+                      }
                       placeholder="e.g., Cotton, Polyester"
                     />
                   </div>
                   <div className="form-group">
                     <label>Fit Style</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.specs.fit_style}
-                      onChange={(e) => handleSpecChange('fit_style', e.target.value)}
+                      onChange={(e) =>
+                        handleSpecChange("fit_style", e.target.value)
+                      }
                       placeholder="e.g., Regular, Slim"
                     />
                   </div>
@@ -680,19 +868,23 @@ export default function AdminProductEditPage() {
                 <div className="form-row" style={{ marginTop: 16 }}>
                   <div className="form-group">
                     <label>Neckline</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.specs.neckline}
-                      onChange={(e) => handleSpecChange('neckline', e.target.value)}
+                      onChange={(e) =>
+                        handleSpecChange("neckline", e.target.value)
+                      }
                       placeholder="e.g., Round Neck, V-Neck"
                     />
                   </div>
                   <div className="form-group">
                     <label>Sleeve Length</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.specs.sleeve_length}
-                      onChange={(e) => handleSpecChange('sleeve_length', e.target.value)}
+                      onChange={(e) =>
+                        handleSpecChange("sleeve_length", e.target.value)
+                      }
                       placeholder="e.g., Full Sleeve, Half Sleeve"
                     />
                   </div>
@@ -700,28 +892,34 @@ export default function AdminProductEditPage() {
                 <div className="form-row" style={{ marginTop: 16 }}>
                   <div className="form-group">
                     <label>Pattern</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.specs.pattern}
-                      onChange={(e) => handleSpecChange('pattern', e.target.value)}
+                      onChange={(e) =>
+                        handleSpecChange("pattern", e.target.value)
+                      }
                       placeholder="e.g., Solid, Striped"
                     />
                   </div>
                   <div className="form-group">
                     <label>Finish</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.specs.finish}
-                      onChange={(e) => handleSpecChange('finish', e.target.value)}
+                      onChange={(e) =>
+                        handleSpecChange("finish", e.target.value)
+                      }
                       placeholder="e.g., Soft, Matte"
                     />
                   </div>
                 </div>
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Care Instructions</label>
-                  <textarea 
+                  <textarea
                     value={formData.specs.care_instructions}
-                    onChange={(e) => handleSpecChange('care_instructions', e.target.value)}
+                    onChange={(e) =>
+                      handleSpecChange("care_instructions", e.target.value)
+                    }
                     placeholder="Washing and care instructions"
                     rows={3}
                   />
@@ -732,27 +930,57 @@ export default function AdminProductEditPage() {
               <div className="coupon-form">
                 <h3>Product Settings</h3>
                 <div className="form-row three-col">
-                  <label className="form-group checkbox" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                    <input 
+                  <label
+                    className="form-group checkbox"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
                       type="checkbox"
                       checked={formData.is_active}
-                      onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                      onChange={(e) =>
+                        handleInputChange("is_active", e.target.checked)
+                      }
                     />
                     <span>Active</span>
                   </label>
-                  <label className="form-group checkbox" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                    <input 
+                  <label
+                    className="form-group checkbox"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
                       type="checkbox"
                       checked={formData.is_featured}
-                      onChange={(e) => handleInputChange('is_featured', e.target.checked)}
+                      onChange={(e) =>
+                        handleInputChange("is_featured", e.target.checked)
+                      }
                     />
                     <span>Featured</span>
                   </label>
-                  <label className="form-group checkbox" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                    <input 
+                  <label
+                    className="form-group checkbox"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
                       type="checkbox"
                       checked={formData.is_spotlight}
-                      onChange={(e) => handleInputChange('is_spotlight', e.target.checked)}
+                      onChange={(e) =>
+                        handleInputChange("is_spotlight", e.target.checked)
+                      }
                     />
                     <span>Spotlight</span>
                   </label>
@@ -760,21 +988,32 @@ export default function AdminProductEditPage() {
                 <div className="form-row" style={{ marginTop: 16 }}>
                   <div className="form-group">
                     <label>Rating</label>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      max="5" 
+                    <input
+                      type="number"
+                      min="0"
                       step="0.1"
                       value={formData.rating}
-                      onChange={(e) => handleInputChange('rating', parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "rating",
+                          Math.max(0, parseFloat(e.target.value) || 0),
+                        )
+                      }
                     />
                   </div>
                   <div className="form-group">
                     <label>Review Count</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
                       value={formData.review_count}
-                      onChange={(e) => handleInputChange('review_count', parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "review_count",
+                          Math.max(0, parseInt(e.target.value) || 0),
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -782,73 +1021,124 @@ export default function AdminProductEditPage() {
             </div>
 
             {/* Right Column - Preview */}
-            <div style={{ position: 'sticky', top: 100 }}>
-              <div className="checkout-sidebar" style={{ position: 'static' }}>
+            <div style={{ position: "sticky", top: 100 }}>
+              <div className="checkout-sidebar" style={{ position: "static" }}>
                 <h3>Product Preview</h3>
-                
+
                 {formData.images.length > 0 && (
-                  <img 
-                    src={formData.images[0]} 
-                    alt="Preview" 
-                    style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 12, marginBottom: 20 }}
+                  <img
+                    src={formData.images[0]}
+                    alt="Preview"
+                    style={{
+                      width: "100%",
+                      aspectRatio: "3/4",
+                      objectFit: "cover",
+                      borderRadius: 12,
+                      marginBottom: 20,
+                    }}
                   />
                 )}
 
-                <h4 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{formData.name || 'Product Name'}</h4>
-                
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-                  <span style={{ fontSize: 24, fontWeight: 700 }}>{formatPrice(displayPrice)}</span>
+                <h4 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                  {formData.name || "Product Name"}
+                </h4>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <span style={{ fontSize: 24, fontWeight: 700 }}>
+                    {formatPrice(displayPrice)}
+                  </span>
                   {originalPrice && (
-                    <span style={{ fontSize: 16, textDecoration: 'line-through', color: '#999' }}>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        textDecoration: "line-through",
+                        color: "#999",
+                      }}
+                    >
                       {formatPrice(originalPrice)}
                     </span>
                   )}
                 </div>
 
-                <p style={{ fontSize: 14, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
-                  {formData.description || 'No description'}
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#666",
+                    marginBottom: 16,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {formData.description || "No description"}
                 </p>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                  {formData.sizes.map(size => (
-                    <span key={size} style={{ 
-                      padding: '4px 12px', 
-                      background: '#f5f5f5', 
-                      borderRadius: 4,
-                      fontSize: 12,
-                      fontWeight: 500
-                    }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginBottom: 16,
+                  }}
+                >
+                  {formData.sizes.map((size) => (
+                    <span
+                      key={size}
+                      style={{
+                        padding: "4px 12px",
+                        background: "#f5f5f5",
+                        borderRadius: 4,
+                        fontSize: 12,
+                        fontWeight: 500,
+                      }}
+                    >
                       {size}
                     </span>
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                  {formData.colors.map(color => (
-                    <span key={color} style={{ 
-                      padding: '4px 12px', 
-                      background: '#f5f5f5', 
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 500
-                    }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginBottom: 16,
+                  }}
+                >
+                  {formData.colors.map((color) => (
+                    <span
+                      key={color}
+                      style={{
+                        padding: "4px 12px",
+                        background: "#f5f5f5",
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 500,
+                      }}
+                    >
                       {color}
                     </span>
                   ))}
                 </div>
 
-                <div style={{ paddingTop: 16, borderTop: '1px solid #e5e5e5' }}>
-                  <p style={{ fontSize: 13, color: '#666', margin: '4px 0' }}>
+                <div style={{ paddingTop: 16, borderTop: "1px solid #e5e5e5" }}>
+                  <p style={{ fontSize: 13, color: "#666", margin: "4px 0" }}>
                     <strong>Category:</strong> {formData.category}
                   </p>
-                  <p style={{ fontSize: 13, color: '#666', margin: '4px 0' }}>
+                  <p style={{ fontSize: 13, color: "#666", margin: "4px 0" }}>
                     <strong>Stock:</strong> {formData.stock} units
                   </p>
-                  <p style={{ fontSize: 13, color: '#666', margin: '4px 0' }}>
-                    <strong>Status:</strong> {formData.is_active ? 'Active' : 'Inactive'}
+                  <p style={{ fontSize: 13, color: "#666", margin: "4px 0" }}>
+                    <strong>Status:</strong>{" "}
+                    {formData.is_active ? "Active" : "Inactive"}
                   </p>
                   {formData.badge && (
-                    <p style={{ fontSize: 13, color: '#666', margin: '4px 0' }}>
+                    <p style={{ fontSize: 13, color: "#666", margin: "4px 0" }}>
                       <strong>Badge:</strong> {formData.badge}
                     </p>
                   )}
@@ -858,7 +1148,7 @@ export default function AdminProductEditPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );
